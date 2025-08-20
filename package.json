@@ -11,6 +11,7 @@
     "url": "https://github.com/towncryerIO/towncryer-js-sdk.git"
   },
   "scripts": {
+    "clean": "rimraf dist",
     "build:cjs": "tsc",
     "build:esm": "tsc -p tsconfig.esm.json",
     "build:umd": "esbuild ./src/index.ts --bundle --global-name=towncryerjssdk --outfile=dist/towncryer-js-sdk.js --format=iife",
