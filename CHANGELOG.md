@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/towncryerIO/towncryer-js-sdk/compare/v1.0.0...v1.1.0) (2025-08-20)
+
+
+### Features
+
+* cdn build ([#2](https://github.com/towncryerIO/towncryer-js-sdk/issues/2)) ([9decfbe](https://github.com/towncryerIO/towncryer-js-sdk/commit/9decfbe87cb009ad92993560b251e427093235d2))
+
 # 1.0.0 (2025-08-19)
 
 
