@@ -62,9 +62,7 @@ export class Towncryer implements TowncryerSDK {
     constructor(config: Config) {
         this.config = config;
 
-        // ApiService.setBaseUrl("https://staging-api.towncryer.io/api/v1");
-
-        ApiService.setBaseUrl("http://localhost:8888/api/v1");
+        ApiService.setBaseUrl("https://staging-api.towncryer.io/api/v1");
         
         if (config.authConfig.accessToken) {
             ApiService.setTokenAndOrganisationId(config.authConfig.accessToken, config.organisationId ?? "");
