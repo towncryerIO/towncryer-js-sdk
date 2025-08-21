@@ -24,47 +24,14 @@ export interface FirebaseConfig {
 
 // API Response interfaces
 export interface ApiResponse {
-    code: string;
+    code?: string;
     message: string;
-    data?: any;
+    data?: object;
 }
 
 export interface ScheduleResponse {
     id: string;
     status: string;
-}
-
-export interface EventData {
-    name: string;
-    customer: {
-        customerId: string;
-        firstName: string;
-        lastName: string;
-    };
-    data?: Record<string, any>;
-}
-
-// Message interfaces
-export interface BulkMessageOptions {
-    emails?: EmailOptions[];
-    pushNotifications?: PushNotificationOptions[];
-    smses?: SMSOptions[];
-}
-
-export interface EmailOptions {
-    title: string;
-    body: string;
-    recipients: string[];
-    templateId?: string;
-    data?: Record<string, any>;
-}
-
-export interface PushNotificationOptions {
-    title: string;
-    body: string;
-    recipients: string[];
-    data?: Record<string, any>;
-    imageUrl?: string;
 }
 
 export interface SMSOptions {
@@ -78,16 +45,16 @@ export interface ContactFormData {
     email: string;
     subject: string;
     message: string;
-    metadata?: Record<string, any>; // Additional custom fields
+    metadata?: object;
 }
 
 // Email Subscription Options Interface
 export interface EmailSubscriptionOptions {
     firstName?: string;
     lastName?: string;
-    source?: string; // Where the subscription came from e.g. 'newsletter_popup', 'footer_form'
-    preferences?: string[]; // E.g. 'marketing', 'product_updates'
-    metadata?: Record<string, any>; // Additional custom fields
+    source?: string;
+    preferences?: string[];
+    metadata?: object;
 }
 
 // Push Notification Models
@@ -95,7 +62,7 @@ export interface PushNotification {
     id: string;
     title: string;
     body: string;
-    data?: Record<string, any>;
+    data?: object;
     imageUrl?: string;
     timestamp: number;
     read: boolean;
