@@ -178,12 +178,6 @@ describe('ApiService', () => {
     });
   });
 
-  describe('setApiKey', () => {
-    it('should call getApi on auth and create axios instance', () => {
-        
-    });
-  });
-
   describe('loginUsingApiKey', () => {
     it('should set token and refresh token on successful login', async () => {
       const mockResponse = {

@@ -64,10 +64,14 @@ export class Towncryer implements TowncryerSDK {
     apiService.setBaseUrl('https://staging-api.towncryer.io/api/v1');
         
     if (config.authConfig.accessToken) {
-      apiService.setTokenAndOrganisationId(config.authConfig.accessToken, config.organisationId ?? '');
+      apiService.setTokenAndOrganisationId(
+        config.authConfig.accessToken,
+        config.organisationId ?? '');
     } else if (config.authConfig.apiKey) {
       apiService.setApiKey(config.authConfig.apiKey);
-    } else if (config.organisationId) {
+    }
+    
+    if (config.organisationId) {
       apiService.setOrganisationId(config.organisationId);
     }
         

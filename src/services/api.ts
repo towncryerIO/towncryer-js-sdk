@@ -58,17 +58,28 @@ export default class ApiService {
     return ApiService.instance;
   }
 
-  private createAxiosInstance(): AxiosInstance {
-    const axiosInstance = this.axiosInstanceFactory.create({
-      baseURL: this.configuration.basePath,
-      headers: {
-        'X-Tenant-ID': this.tenantId,
-        'Client': 'TowncryerCoreSDK',
-        Authorization: `Bearer ${this.token}`,
-      }
-    });
+  private updateAxiosInstance() {
+    this.axiosInstance = this.createAxiosInstance();
+    this.setupAxiosInterceptors();
+  }
 
-    return axiosInstance;
+  private createAxiosInstance(): AxiosInstance {
+    const headers: Record<string, string> = {
+      'Client': 'TowncryerCoreSDK',
+    };
+
+    if (this.tenantId) {
+      headers['X-Tenant-ID'] = this.tenantId;
+    }
+
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
+    return this.axiosInstanceFactory.create({
+      baseURL: this.configuration.basePath,
+      headers,
+    });
   }
 
   public setBaseUrl(baseUrl: string) {
@@ -76,34 +87,44 @@ export default class ApiService {
       ...this.configuration,
       basePath: baseUrl,
     });
-    this.axiosInstance = this.createAxiosInstance();
+    this.updateAxiosInstance();
   }
 
   public setToken(token: string | undefined) {
+    if (this.token === token) return;
     this.token = token;
-    this.axiosInstance = this.createAxiosInstance();
-    this.setupAxiosInterceptors();
+    this.updateAxiosInstance();
   }
 
   public setOrganisationId(organisationId: string) {
+    if (this.tenantId === organisationId) return;
     this.tenantId = organisationId;
-    this.axiosInstance = this.createAxiosInstance();
-    this.setupAxiosInterceptors();
+    this.updateAxiosInstance();
   }
 
   public setTokenAndOrganisationId(token: string, organisationId: string) {
+    const shouldUpdate = this.token !== token || this.tenantId !== organisationId;
     this.token = token;
     this.tenantId = organisationId;
-    this.axiosInstance = this.createAxiosInstance();
-    this.setupAxiosInterceptors();
+    
+    if (shouldUpdate) {
+      this.updateAxiosInstance();
+    }
   }
 
   public setRefreshToken(refreshToken: string | undefined) {
     this.refreshToken = refreshToken;
   }
 
-  public setApiKey(apiKey: string) {
-    this.loginUsingApiKey(apiKey);
+  public async setApiKey(apiKey: string): Promise<void> {
+    try {
+      const response = await this.getApi('auth').clientAppLogin({ apiKey });
+      this.setToken(response.data.accessToken);
+      this.setRefreshToken(response.data.refreshToken);
+    } catch (error) {
+      console.error('Failed to login using API key', error);
+      throw error; // Re-throw to allow error handling by the caller
+    }
   }
 
   public getApi<K extends keyof ApiTypes>(apiName: K): ApiTypes[K] {
@@ -111,18 +132,6 @@ export default class ApiService {
       this.apiInstances[apiName] = this.createApi(apiName);
     }
     return this.apiInstances[apiName] as ApiTypes[K];
-  }
-
-  private loginUsingApiKey(apiKey: string) {
-    const api = this.getApi('auth');
-    api.clientAppLogin({ apiKey })
-      .then((response: AxiosResponse<ResponsesClientAppLoginResponsePayload>) => {
-        this.setToken(response.data.accessToken);
-        this.setRefreshToken(response.data.refreshToken);
-      })
-      .catch((error) => {
-        console.error('Failed to login using API key', error);
-      });
   }
 
   private createApi<K extends keyof ApiTypes>(apiName: K): ApiTypes[K] {
