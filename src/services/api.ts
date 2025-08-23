@@ -4,10 +4,9 @@ import {
   EventsApi,
   CustomersApi,
   MessagesApi,
-  ResponsesClientAppLoginResponsePayload,
   ApiError,
 } from '@towncryerio/towncryer-js-api-client';
-import axios, { AxiosInstance, AxiosResponse, CreateAxiosDefaults } from 'axios';
+import axios, { AxiosInstance, CreateAxiosDefaults } from 'axios';
 
 type ApiTypes = {
     auth: AuthApi;
