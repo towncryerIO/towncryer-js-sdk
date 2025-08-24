@@ -1,7 +1,7 @@
 import { ApiResponse, ContactFormData, EmailSubscriptionOptions } from '../types';
 import { EventService } from './eventService';
-import { ApiError, CreateCustomerRequest, EventCustomerRequest, PublishEventPayload } from '@towncryerio/towncryer-js-api-client';
-import { handleApiError, standardizeApiResponse } from '../utils/errorHandler';
+import { ApiError, EventCustomerRequest, PublishEventPayload } from '@towncryerio/towncryer-js-api-client';
+import { handleApiError } from '../utils/errorHandler';
 
 /**
  * Utility Service Interface
@@ -73,11 +73,11 @@ export interface UtilityService {
  * the EventService.
  */
 export class TowncryerUtilityService implements UtilityService {
-    constructor(
+  constructor(
         private eventService: EventService,
-    ) {}
+  ) {}
     
-    /**
+  /**
      * Submit a contact form to Towncryer
      * 
      * Processes a contact form submission by creating an event with the form data
@@ -88,33 +88,45 @@ export class TowncryerUtilityService implements UtilityService {
      * @returns Promise resolving to an ApiResponse
      * @throws ApiError if the event publishing fails
      */
-    async submitContactForm(formData: ContactFormData): Promise<ApiResponse> {
-        try {
-            const customer: EventCustomerRequest = {
-                externalId: formData.email,
-                email: formData.email,
-                firstName: formData.name.split(' ')[0] || '',
-                lastName: formData.name.split(' ').slice(1).join(' ') || ''
-            };
+  async submitContactForm(formData: ContactFormData): Promise<ApiResponse> {
+    try {
+      const customer: EventCustomerRequest = {
+        externalId: formData.email,
+        email: formData.email,
+        firstName: formData.name.split(' ')[0] || '',
+        lastName: formData.name.split(' ').slice(1).join(' ') || ''
+      };
             
-            const event: PublishEventPayload = {
-                name: 'contact_form.submitted',
-                customer: customer,
-                data: {
-                    subject: formData.subject,
-                    message: formData.message,
-                    ...formData.metadata
-                }
-            };
-            
-            const response = await this.eventService.publishEvent(event);
-            return standardizeApiResponse(response);
-        } catch (error) {
-            throw handleApiError(error);
+      const event: PublishEventPayload = {
+        name: 'contact_form.submitted',
+        customer: customer,
+        data: {
+          subject: formData.subject,
+          message: formData.message,
+          ...formData.metadata
         }
+      };
+            
+      const response = await this.eventService.publishEvent(event);
+      // Ensure the response matches the expected ApiResponse type
+      if ('code' in response && 'message' in response) {
+        return response as ApiResponse;
+      }
+      return {
+        code: '200',
+        message: 'Success',
+        data: response
+      };
+    } catch (error) {
+      const apiError = handleApiError(error);
+      return {
+        code: '500',
+        message: apiError.message || 'Failed to process request'
+      };
     }
+  }
     
-    /**
+  /**
      * Subscribe an email address to communications
      * 
      * Creates and publishes an email subscription event to the Towncryer platform.
@@ -126,30 +138,42 @@ export class TowncryerUtilityService implements UtilityService {
      * @returns Promise resolving to an ApiResponse
      * @throws ApiError if the event publishing fails
      */
-    async subscribeToEmails(email: string, options: EmailSubscriptionOptions = {}): Promise<ApiResponse> {
-        try {
-            const customer: EventCustomerRequest = {
-                externalId: email,
-                email: email,
-                firstName: options.firstName || '',
-                lastName: options.lastName || ''
-            };
+  async subscribeToEmails(email: string, options: EmailSubscriptionOptions = {}): Promise<ApiResponse> {
+    try {
+      const customer: EventCustomerRequest = {
+        externalId: email,
+        email: email,
+        firstName: options.firstName || '',
+        lastName: options.lastName || ''
+      };
             
-            const event: PublishEventPayload = {
-                name: 'email.subscription',
-                customer: customer,
-                data: {
-                    source: options.source || 'website',
-                    preferences: options.preferences || ['all'],
-                    timestamp: new Date().toISOString(),
-                    ...options.metadata
-                }
-            };
-            
-            const response = await this.eventService.publishEvent(event); 
-            return standardizeApiResponse(response);
-        } catch (error) {
-            throw handleApiError(error);
+      const event: PublishEventPayload = {
+        name: 'email.subscription',
+        customer: customer,
+        data: {
+          source: options.source || 'website',
+          preferences: options.preferences || ['all'],
+          timestamp: new Date().toISOString(),
+          ...options.metadata
         }
+      };
+            
+      const response = await this.eventService.publishEvent(event);
+      // Ensure the response matches the expected ApiResponse type
+      if ('code' in response && 'message' in response) {
+        return response as ApiResponse;
+      }
+      return {
+        code: '200',
+        message: 'Success',
+        data: response
+      };
+    } catch (error) {
+      const apiError = handleApiError(error);
+      return {
+        code: '500',
+        message: apiError.message || 'Failed to process subscription'
+      };
     }
+  }
 }
