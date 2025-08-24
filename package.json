@@ -1,6 +1,6 @@
 {
   "name": "@towncryerio/towncryer-js-sdk",
-  "version": "1.1.0-94835c8",
+  "version": "1.1.0-f819fcd",
   "description": "TypeScript SDK for integrating with the Towncryer API",
   "author": "VolvLabs",
   "main": "dist/index.js",
