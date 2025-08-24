@@ -63,7 +63,7 @@
     "typescript-eslint": "^8.40.0"
   },
   "dependencies": {
-    "@towncryerio/towncryer-js-api-client": "^1.0.0-b1c5bcb",
+    "@towncryerio/towncryer-js-api-client": "^1.2.0",
     "axios": "^1.4.0",
     "firebase": "^11.9.1"
   },
