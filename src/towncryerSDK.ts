@@ -60,28 +60,26 @@ export class Towncryer implements TowncryerSDK {
      */
   constructor(config: Config) {
     this.config = config;
-
     apiService.setBaseUrl('https://staging-api.towncryer.io/api/v1');
-        
-    if (config.authConfig.accessToken) {
-      apiService.setTokenAndOrganisationId(
-        config.authConfig.accessToken,
-        config.organisationId ?? '');
-    } else if (config.authConfig.apiKey) {
-      apiService.setApiKey(config.authConfig.apiKey)
-        .catch((error: Error) => {
-          console.error('Failed to login using API key', error);
-        });
-    }
     
-    if (config.organisationId) {
+    if (config.authConfig.accessToken) {
+      if (config.authConfig.apiKey) {
+        console.warn('Both accessToken and apiKey provided. Using accessToken and ignoring apiKey.');
+      }
+      this.initializeWithToken(
+        config.authConfig.accessToken,
+        config.authConfig.refreshToken,
+        config.organisationId
+      );
+    } else if (config.authConfig.apiKey) {
+      this.initializeWithApiKey(
+        config.authConfig.apiKey,
+        config.organisationId
+      );
+    } else if (config.organisationId) {
       apiService.setOrganisationId(config.organisationId);
     }
-        
-    if (config.authConfig.refreshToken) {
-      apiService.setRefreshToken(config.authConfig.refreshToken);
-    }
-        
+         
     this.eventService = new TowncryerEventService();
     this.customerId = config.customerId ?? '';
         
@@ -89,11 +87,37 @@ export class Towncryer implements TowncryerSDK {
       this.pushNotifications = this.constructFirebase(
         config.firebase ?? {} as FirebaseConfig);
     }
-        
-    // Initialize the remaining services
+
     this.customerService = new TowncryerCustomerService();
     this.messageService = new TowncryerMessageService();
     this.utilityService = new TowncryerUtilityService(this.eventService);
+  }
+  
+  private initializeWithToken(
+    accessToken: string,
+    refreshToken?: string,
+    organisationId?: string
+  ) {
+    if (organisationId) {
+      apiService.setTokenAndOrganisationId(accessToken, organisationId);
+    } else {
+      apiService.setToken(accessToken);
+    }
+    
+    if (refreshToken) {
+      apiService.setRefreshToken(refreshToken);
+    }
+  }
+  
+  private initializeWithApiKey(apiKey: string, organisationId?: string) {
+    if (organisationId) {
+      apiService.setOrganisationId(organisationId);
+    }
+    
+    apiService.setApiKey(apiKey)
+      .catch((error: Error) => {
+        console.error('Failed to initialize with API key:', error);
+      });
   }
 
   constructFirebase(config: FirebaseConfig): FirebasePushNotificationService {
