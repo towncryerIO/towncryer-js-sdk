@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/towncryerIO/towncryer-js-sdk/compare/v1.1.0...v1.2.0) (2025-08-24)
+
+
+### Features
+
+* bug fixes and api service test coverage ([#3](https://github.com/towncryerIO/towncryer-js-sdk/issues/3)) ([9ad41a4](https://github.com/towncryerIO/towncryer-js-sdk/commit/9ad41a470c0a4793cf723caef304b2f7127b31cc))
+
 # [1.1.0](https://github.com/towncryerIO/towncryer-js-sdk/compare/v1.0.0...v1.1.0) (2025-08-20)
 
 
