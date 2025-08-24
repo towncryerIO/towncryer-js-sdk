@@ -68,7 +68,10 @@ export class Towncryer implements TowncryerSDK {
         config.authConfig.accessToken,
         config.organisationId ?? '');
     } else if (config.authConfig.apiKey) {
-      apiService.setApiKey(config.authConfig.apiKey);
+      apiService.setApiKey(config.authConfig.apiKey)
+        .catch((error: Error) => {
+          console.error('Failed to login using API key', error);
+        });
     }
     
     if (config.organisationId) {

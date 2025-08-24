@@ -90,7 +90,6 @@ describe('ApiService', () => {
     
     // Create a new instance for each test
     mockInstance = new MockAxiosInstanceFactory();
-    // Spy on the create method
     createSpy = jest.spyOn(mockInstance, 'create').mockImplementation((config?: any) => ({
       ...createMockAxiosInstance(),
       ...(config || {})
@@ -178,7 +177,7 @@ describe('ApiService', () => {
     });
   });
 
-  describe('loginUsingApiKey', () => {
+  describe('setApiKey', () => {
     it('should set token and refresh token on successful login', async () => {
       const mockResponse = {
         data: {
@@ -187,23 +186,18 @@ describe('ApiService', () => {
         },
       };
       
-      // Mock the auth API response
       const mockAuthApi = {
         clientAppLogin: jest.fn().mockResolvedValue(mockResponse),
       };
       
-      // Mock getApi to return our mock auth API
       jest.spyOn(apiService as any, 'getApi').mockReturnValue(mockAuthApi);
       
-      // Mock setToken and setRefreshToken
-      const setTokenSpy = jest.spyOn(apiService as any, 'setToken');
-      const setRefreshTokenSpy = jest.spyOn(apiService as any, 'setRefreshToken');
-      
-      await (apiService as any).setApiKey('test-api-key');
+      await apiService.setApiKey('test-api-key');
       
       expect(mockAuthApi.clientAppLogin).toHaveBeenCalledWith({ apiKey: 'test-api-key' });
-      expect(setTokenSpy).toHaveBeenCalledWith('test-access-token');
-      expect(setRefreshTokenSpy).toHaveBeenCalledWith('test-refresh-token');
+      
+      expect((apiService as any).token).toBe('test-access-token');
+      expect((apiService as any).refreshToken).toBe('test-refresh-token');
     });
   });
 

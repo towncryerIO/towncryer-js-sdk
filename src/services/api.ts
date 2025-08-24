@@ -71,10 +71,12 @@ export default class ApiService {
       headers['X-Tenant-ID'] = this.tenantId;
     }
 
+    console.log(this.token);
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
+    console.log(headers);
     return this.axiosInstanceFactory.create({
       baseURL: this.configuration.basePath,
       headers,
@@ -116,14 +118,9 @@ export default class ApiService {
   }
 
   public async setApiKey(apiKey: string): Promise<void> {
-    try {
-      const response = await this.getApi('auth').clientAppLogin({ apiKey });
-      this.setToken(response.data.accessToken);
-      this.setRefreshToken(response.data.refreshToken);
-    } catch (error) {
-      console.error('Failed to login using API key', error);
-      throw error; // Re-throw to allow error handling by the caller
-    }
+    const response = await this.getApi('auth').clientAppLogin({ apiKey });
+    this.setToken(response.data.accessToken);
+    this.setRefreshToken(response.data.refreshToken);
   }
 
   public getApi<K extends keyof ApiTypes>(apiName: K): ApiTypes[K] {
