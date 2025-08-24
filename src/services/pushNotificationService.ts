@@ -237,7 +237,6 @@ export class FirebasePushNotificationService implements PushNotificationService 
         throw new Error('Notification ID is required');
       }
 
-      // Call the Towncryer API to mark notification as read
       await this.messagesApi.markMessageAsRead(notificationId);
     } catch (error) {
       throw handleApiError(error);
@@ -277,18 +276,15 @@ export class FirebasePushNotificationService implements PushNotificationService 
     };
     try {
       const response = await this.eventService.publishEvent(eventPayload);
-      // Ensure the response matches the expected ApiResponse type
       if ('code' in response && 'message' in response) {
         return response as ApiResponse;
       }
-      // If the response doesn't match, create a success response
       return {
         code: '200',
         message: 'Success',
         data: response
       };
     } catch (error) {
-      // Convert any error to an ApiResponse
       const apiError = handleApiError(error);
       const errorResponse: ApiResponse = {
         code: '500',

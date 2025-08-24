@@ -8,6 +8,11 @@ import {
 } from '@towncryerio/towncryer-js-api-client';
 import axios, { AxiosInstance, CreateAxiosDefaults } from 'axios';
 
+enum AuthMethod {
+  API_KEY = 'api_key',
+  TOKEN = 'token'
+}
+
 type ApiTypes = {
     auth: AuthApi;
     event: EventsApi;
@@ -43,6 +48,7 @@ export default class ApiService {
   private isRefreshing = false;
   private tenantId = '';
   private axiosInstanceFactory: AxiosInstanceFactory;
+  private authMethod: AuthMethod = AuthMethod.TOKEN;
   private constructor(axiosFactory: AxiosInstanceFactory) {
     this.axiosInstanceFactory = axiosFactory;
     this.axiosInstance = this.createAxiosInstance();
@@ -71,12 +77,10 @@ export default class ApiService {
       headers['X-Tenant-ID'] = this.tenantId;
     }
 
-    console.log(this.token);
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    console.log(headers);
     return this.axiosInstanceFactory.create({
       baseURL: this.configuration.basePath,
       headers,
@@ -118,6 +122,7 @@ export default class ApiService {
   }
 
   public async setApiKey(apiKey: string): Promise<void> {
+    this.authMethod = AuthMethod.API_KEY;
     const response = await this.getApi('auth').clientAppLogin({ apiKey });
     this.setToken(response.data.accessToken);
     this.setRefreshToken(response.data.refreshToken);
@@ -158,8 +163,12 @@ export default class ApiService {
       throw new Error('Refresh token is required to refresh short-lived token');
     }
 
-    const response = await this.getApi('auth').
-      refreshShortLivedToken({ refreshToken: this.refreshToken });
+    let response;
+    if (this.authMethod === AuthMethod.API_KEY) {
+      response = await this.getApi('auth').refreshClientAppToken({ refreshToken: this.refreshToken });
+    } else {
+      response = await this.getApi('auth').refreshShortLivedToken({ refreshToken: this.refreshToken });
+    }
 
     this.setToken(response.data.accessToken);
     this.setRefreshToken(response.data.refreshToken);
@@ -208,17 +217,22 @@ export default class ApiService {
 
         this.isRefreshing = true;
 
-        const newToken = await this.refreshShortLivedToken();
-        originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
-        this.processQueue(null, newToken);
-        return this.axiosInstance(originalRequest)
-          .catch(error => {
-            this.processQueue(error as ApiError, null);
-            return Promise.reject(error);
-          })
-          .finally(() => {
-            this.isRefreshing = false;
-          });
+        try {
+          const newToken = await this.refreshShortLivedToken();
+          originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+          this.processQueue(null, newToken);
+          return this.axiosInstance(originalRequest)
+            .catch(error => {
+              this.processQueue(error as ApiError, null);
+              return Promise.reject(error);
+            })
+            .finally(() => {
+              this.isRefreshing = false;
+            });
+        } catch (error) {
+          this.processQueue(error as ApiError, null);
+          return Promise.reject(error);
+        }
       }
     );
   }
