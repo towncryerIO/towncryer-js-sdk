@@ -34,7 +34,6 @@ export class TowncryerEventService implements EventService {
   async publishEvent(eventPayload: PublishEventPayload): Promise<ApiResponse> {
     try {
       const response = await this.eventsApi.accept(eventPayload);
-      // Directly return the response data if it matches our ApiResponse interface
       if (response.data && typeof response.data === 'object' && 'message' in response.data) {
         return {
           code: '200',

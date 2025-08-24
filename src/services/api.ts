@@ -168,6 +168,16 @@ export default class ApiService {
   };
 
   private setupAxiosInterceptors() {
+    this.axiosInstance.interceptors.request.use(
+      request => {
+        request.headers['Client'] = 'TowncryerCoreSDK';
+        if (this.token) {
+          request.headers['Authorization'] = `Bearer ${this.token}`;
+        }
+        return request;
+      }
+    );
+
     this.axiosInstance.interceptors.response.use(
       response => response,
       async error => {
