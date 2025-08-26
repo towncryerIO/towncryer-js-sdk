@@ -1,6 +1,6 @@
 {
   "name": "@towncryerio/towncryer-js-sdk",
-  "version": "1.2.1",
+  "version": "1.2.1-3f7537a",
   "description": "TypeScript SDK for integrating with the Towncryer API",
   "author": "VolvLabs",
   "main": "dist/index.js",
@@ -63,7 +63,7 @@
     "typescript-eslint": "^8.40.0"
   },
   "dependencies": {
-    "@towncryerio/towncryer-js-api-client": "^1.2.0",
+    "@towncryerio/towncryer-js-api-client": "^1.2.0-f79da7f",
     "axios": "^1.4.0",
     "firebase": "^11.9.1"
   },
