@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - '**'  # matches any branch
-  pull_request:
-    types: [opened, synchronize, reopened]
 
 jobs:
   lint:
