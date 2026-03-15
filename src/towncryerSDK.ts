@@ -60,7 +60,7 @@ export class Towncryer implements TowncryerSDK {
      */
   constructor(config: Config) {
     this.config = config;
-    apiService.setBaseUrl('https://staging-api.towncryer.io/api/v1');
+    apiService.setBaseUrl('https://api.towncryer.io/api/v1');
     
     if (config.authConfig.accessToken) {
       if (config.authConfig.apiKey) {
