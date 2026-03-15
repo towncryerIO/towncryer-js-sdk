@@ -60,6 +60,7 @@ jest.mock('@towncryerio/towncryer-js-api-client', () => {
   const mockAuthApi = {
     clientAppLogin: jest.fn(),
     refreshShortLivedToken: jest.fn(),
+    refreshClientAppToken: jest.fn(),
   };
 
   return {
@@ -201,7 +202,88 @@ describe('ApiService', () => {
     });
   });
 
+  describe('authMethod determination', () => {
+    it('should set authMethod to TOKEN when setToken is called with a value', () => {
+      apiService.setToken('some-token');
+      expect((apiService as any).authMethod).toBe('token');
+    });
+
+    it('should set authMethod to TOKEN when setRefreshToken is called with a value', () => {
+      apiService.setRefreshToken('some-refresh-token');
+      expect((apiService as any).authMethod).toBe('token');
+    });
+
+    it('should set authMethod to API_KEY when setApiKey is called', async () => {
+      const mockAuthApi = {
+        clientAppLogin: jest.fn().mockResolvedValue({
+          data: { accessToken: 'a', refreshToken: 'r' },
+        }),
+      };
+      jest.spyOn(apiService as any, 'getApi').mockReturnValue(mockAuthApi);
+
+      await apiService.setApiKey('my-api-key');
+
+      expect((apiService as any).authMethod).toBe('api_key');
+    });
+
+    it('should switch authMethod to TOKEN after setApiKey if setToken is subsequently called', async () => {
+      // Regression: authMethod was stuck on API_KEY even after token-based auth was configured
+      const mockAuthApi = {
+        clientAppLogin: jest.fn().mockResolvedValue({
+          data: { accessToken: 'initial-token', refreshToken: 'initial-refresh' },
+        }),
+      };
+      jest.spyOn(apiService as any, 'getApi').mockReturnValue(mockAuthApi);
+
+      await apiService.setApiKey('my-api-key');
+      expect((apiService as any).authMethod).toBe('api_key');
+
+      apiService.setToken('user-token');
+      apiService.setRefreshToken('user-refresh-token');
+
+      expect((apiService as any).authMethod).toBe('token');
+    });
+  });
+
   describe('refreshShortLivedToken', () => {
+    it('should call refreshClientAppToken when authMethod is API_KEY', async () => {
+      const mockResponse = {
+        data: { accessToken: 'new-access-token', refreshToken: 'new-refresh-token' },
+      };
+      const mockAuthApi = {
+        refreshClientAppToken: jest.fn().mockResolvedValue(mockResponse),
+        refreshShortLivedToken: jest.fn(),
+      };
+      jest.spyOn(apiService as any, 'getApi').mockReturnValue(mockAuthApi);
+
+      (apiService as any).authMethod = 'api_key';
+      (apiService as any).refreshToken = 'test-refresh-token';
+
+      await (apiService as any).refreshShortLivedToken();
+
+      expect(mockAuthApi.refreshClientAppToken).toHaveBeenCalledWith({ refreshToken: 'test-refresh-token' });
+      expect(mockAuthApi.refreshShortLivedToken).not.toHaveBeenCalled();
+    });
+
+    it('should call refreshShortLivedToken when authMethod is TOKEN', async () => {
+      const mockResponse = {
+        data: { accessToken: 'new-access-token', refreshToken: 'new-refresh-token' },
+      };
+      const mockAuthApi = {
+        refreshClientAppToken: jest.fn(),
+        refreshShortLivedToken: jest.fn().mockResolvedValue(mockResponse),
+      };
+      jest.spyOn(apiService as any, 'getApi').mockReturnValue(mockAuthApi);
+
+      (apiService as any).authMethod = 'token';
+      (apiService as any).refreshToken = 'test-refresh-token';
+
+      await (apiService as any).refreshShortLivedToken();
+
+      expect(mockAuthApi.refreshShortLivedToken).toHaveBeenCalledWith({ refreshToken: 'test-refresh-token' });
+      expect(mockAuthApi.refreshClientAppToken).not.toHaveBeenCalled();
+    });
+
     it('should refresh the token using refresh token', async () => {
       const mockResponse = {
         data: {
@@ -221,17 +303,13 @@ describe('ApiService', () => {
       // Set a refresh token
       (apiService as any).refreshToken = 'test-refresh-token';
       
-      // Mock setToken and setRefreshToken
-      const setTokenSpy = jest.spyOn(apiService as any, 'setToken');
-      const setRefreshTokenSpy = jest.spyOn(apiService as any, 'setRefreshToken');
-      
       await (apiService as any).refreshShortLivedToken();
       
       expect(mockAuthApi.refreshShortLivedToken).toHaveBeenCalledWith({ 
         refreshToken: 'test-refresh-token' 
       });
-      expect(setTokenSpy).toHaveBeenCalledWith('new-access-token');
-      expect(setRefreshTokenSpy).toHaveBeenCalledWith('new-refresh-token');
+      expect((apiService as any).token).toBe('new-access-token');
+      expect((apiService as any).refreshToken).toBe('new-refresh-token');
     });
   });
 });
