@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/towncryerIO/towncryer-js-sdk/compare/v1.2.1...v1.2.2) (2026-03-15)
+
+
+### Bug Fixes
+
+* fixed refresh token issue ([#7](https://github.com/towncryerIO/towncryer-js-sdk/issues/7)) ([14b2ee8](https://github.com/towncryerIO/towncryer-js-sdk/commit/14b2ee8655cb6594a4a76f3be770e54622a857cc))
+
 ## [1.2.1](https://github.com/towncryerIO/towncryer-js-sdk/compare/v1.2.0...v1.2.1) (2025-08-24)
 
 
