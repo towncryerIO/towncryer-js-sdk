@@ -98,6 +98,9 @@ export default class ApiService {
   public setToken(token: string | undefined) {
     if (this.token === token) return;
     this.token = token;
+    if (token) {
+      this.authMethod = AuthMethod.TOKEN;
+    }
     this.updateAxiosInstance();
   }
 
@@ -119,13 +122,16 @@ export default class ApiService {
 
   public setRefreshToken(refreshToken: string | undefined) {
     this.refreshToken = refreshToken;
+    if (refreshToken) {
+      this.authMethod = AuthMethod.TOKEN;
+    }
   }
 
   public async setApiKey(apiKey: string): Promise<void> {
     this.authMethod = AuthMethod.API_KEY;
     const response = await this.getApi('auth').clientAppLogin({ apiKey });
-    this.setToken(response.data.accessToken);
-    this.setRefreshToken(response.data.refreshToken);
+    this.token = response.data.accessToken;
+    this.refreshToken = response.data.refreshToken;
   }
 
   public getApi<K extends keyof ApiTypes>(apiName: K): ApiTypes[K] {
@@ -170,8 +176,8 @@ export default class ApiService {
       response = await this.getApi('auth').refreshShortLivedToken({ refreshToken: this.refreshToken });
     }
 
-    this.setToken(response.data.accessToken);
-    this.setRefreshToken(response.data.refreshToken);
+    this.token = response.data.accessToken;
+    this.refreshToken = response.data.refreshToken;
 
     return response.data.accessToken || '';
   };
