@@ -11,7 +11,7 @@ import { MessageService, TowncryerMessageService } from './services/messageServi
 import { PushNotificationService, FirebasePushNotificationService } from './services/pushNotificationService';
 import { UtilityService, TowncryerUtilityService } from './services/utilityService';
 import { ApiResponse, ApiError, SendBulkMessagesPayload, PublishEventPayload, CreateCustomerRequest, ScheduleInfo } from '@towncryerio/towncryer-js-api-client';
-import { apiService } from './services/api';
+import ApiService, { DefaultAxiosInstanceFactory } from './services/api';
 
 /**
  * Towncryer SDK Interface
@@ -47,6 +47,7 @@ export interface TowncryerSDK {
  */
 export class Towncryer implements TowncryerSDK {
   private config: Config;
+  private apiService: ApiService;
   private pushNotifications?: PushNotificationService;
   private eventService: EventService;
   private customerService: CustomerService;
@@ -60,8 +61,9 @@ export class Towncryer implements TowncryerSDK {
      */
   constructor(config: Config) {
     this.config = config;
-    apiService.setBaseUrl('https://api.towncryer.io/api/v1');
-    
+    this.apiService = new ApiService(new DefaultAxiosInstanceFactory());
+    this.apiService.setBaseUrl('https://api.towncryer.io/api/v1');
+
     if (config.authConfig.accessToken) {
       if (config.authConfig.apiKey) {
         console.warn('Both accessToken and apiKey provided. Using accessToken and ignoring apiKey.');
@@ -77,44 +79,44 @@ export class Towncryer implements TowncryerSDK {
         config.organisationId
       );
     } else if (config.organisationId) {
-      apiService.setOrganisationId(config.organisationId);
+      this.apiService.setOrganisationId(config.organisationId);
     }
-         
-    this.eventService = new TowncryerEventService();
+
+    this.eventService = new TowncryerEventService(this.apiService);
     this.customerId = config.customerId ?? '';
-        
+
     if (config.firebase !== null || Object.keys(config.firebase).length > 0) {
       this.pushNotifications = this.constructFirebase(
         config.firebase ?? {} as FirebaseConfig);
     }
 
-    this.customerService = new TowncryerCustomerService();
-    this.messageService = new TowncryerMessageService();
+    this.customerService = new TowncryerCustomerService(this.apiService);
+    this.messageService = new TowncryerMessageService(this.apiService);
     this.utilityService = new TowncryerUtilityService(this.eventService);
   }
-  
+
   private initializeWithToken(
     accessToken: string,
     refreshToken?: string,
     organisationId?: string
   ) {
     if (organisationId) {
-      apiService.setTokenAndOrganisationId(accessToken, organisationId);
+      this.apiService.setTokenAndOrganisationId(accessToken, organisationId);
     } else {
-      apiService.setToken(accessToken);
+      this.apiService.setToken(accessToken);
     }
-    
+
     if (refreshToken) {
-      apiService.setRefreshToken(refreshToken);
+      this.apiService.setRefreshToken(refreshToken);
     }
   }
-  
+
   private initializeWithApiKey(apiKey: string, organisationId?: string) {
     if (organisationId) {
-      apiService.setOrganisationId(organisationId);
+      this.apiService.setOrganisationId(organisationId);
     }
-    
-    apiService.setApiKey(apiKey)
+
+    this.apiService.setApiKey(apiKey)
       .catch((error: Error) => {
         console.error('Failed to initialize with API key:', error);
       });
@@ -124,6 +126,7 @@ export class Towncryer implements TowncryerSDK {
     return new FirebasePushNotificationService(
       config,
       this.eventService,
+      this.apiService,
       this.customerId,
     );
   }
@@ -208,7 +211,7 @@ export class Towncryer implements TowncryerSDK {
      * @param token The access token to use for API requests
      */
   setAccessToken(token: string): void {
-    apiService.setToken(token);
+    this.apiService.setToken(token);
   }
 
   /**
@@ -216,7 +219,7 @@ export class Towncryer implements TowncryerSDK {
      * @param token The refresh token to use for token refresh
      */
   setRefreshToken(token: string): void {
-    apiService.setRefreshToken(token);
+    this.apiService.setRefreshToken(token);
   }
 
   setCustomerId(customerId: string): void {

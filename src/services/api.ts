@@ -31,7 +31,6 @@ export class DefaultAxiosInstanceFactory implements AxiosInstanceFactory {
 }
 
 export default class ApiService {
-  private static instance: ApiService;
   private apiInstances: Partial<ApiTypes> = {};
   private configuration: Configuration = {
     isJsonMime: (mime: string) => {
@@ -49,18 +48,10 @@ export default class ApiService {
   private tenantId = '';
   private axiosInstanceFactory: AxiosInstanceFactory;
   private authMethod: AuthMethod = AuthMethod.TOKEN;
-  private constructor(axiosFactory: AxiosInstanceFactory) {
+  public constructor(axiosFactory: AxiosInstanceFactory) {
     this.axiosInstanceFactory = axiosFactory;
     this.axiosInstance = this.createAxiosInstance();
     this.setupAxiosInterceptors();
-  }
-
-  public static getInstance(factory: AxiosInstanceFactory): ApiService {
-    if (!ApiService.instance) {
-      ApiService.instance = new ApiService(factory);
-    }
-
-    return ApiService.instance;
   }
 
   private updateAxiosInstance() {
@@ -243,5 +234,3 @@ export default class ApiService {
     );
   }
 }
-
-export const apiService = ApiService.getInstance(new DefaultAxiosInstanceFactory());

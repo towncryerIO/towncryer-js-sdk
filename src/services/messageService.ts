@@ -1,5 +1,5 @@
 import { MessagesApi, ScheduleInfo, SendBulkMessagesPayload } from '@towncryerio/towncryer-js-api-client';
-import { apiService } from './api';
+import ApiService from './api';
 
 /**
  * Message Service Interface
@@ -18,7 +18,7 @@ export interface MessageService {
 export class TowncryerMessageService implements MessageService {
   private messagesApi: MessagesApi;
     
-  constructor() {
+  constructor(apiService: ApiService) {
     this.messagesApi = apiService.getApi('message');
   }
     

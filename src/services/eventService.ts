@@ -1,7 +1,7 @@
 import { ApiResponse } from '../types';
 import { ApiError, EventsApi, PublishEventPayload } from '@towncryerio/towncryer-js-api-client';
 import { handleApiError } from '../utils/errorHandler';
-import { apiService } from './api';
+import ApiService from './api';
 
 /**
  * Event Service Interface
@@ -21,7 +21,7 @@ export interface EventService {
 export class TowncryerEventService implements EventService {
   private eventsApi: EventsApi;
     
-  constructor() {
+  constructor(apiService: ApiService) {
     this.eventsApi = apiService.getApi('event');
   }
     
