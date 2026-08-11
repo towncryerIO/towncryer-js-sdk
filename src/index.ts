@@ -9,6 +9,9 @@
 // Export all types
 export * from './types';
 
+// Export error types
+export * from './errors';
+
 // Export all services
 export * from './services/eventService';
 export * from './services/customerService';

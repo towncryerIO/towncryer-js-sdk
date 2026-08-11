@@ -2,10 +2,11 @@ import { FirebaseConfig, PushNotification, PushNotificationStats } from '../type
 import { FirebaseApp, initializeApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage, isSupported, Messaging, MessagePayload } from 'firebase/messaging';
 import { getMessaging as getMessagingSw } from 'firebase/messaging/sw';
-import { ApiResponse, ApiError, PublishEventPayload, MessagesApi, PaginatePage } from '@towncryerio/towncryer-js-api-client';
+import { ApiResponse, PublishEventPayload, MessagesApi, PaginatePage } from '@towncryerio/towncryer-js-api-client';
 import { EventService } from './eventService';
 import { apiService } from './api';
 import { handleApiError } from '../utils/errorHandler';
+import { TowncryerAPIError } from '../errors';
 
 const PUSH_NOTIFICATION_CHANNEL_NAME = 'PushNotification';
 
@@ -53,7 +54,7 @@ export interface PushNotificationService {
    * @param customerId Customer ID
    * @param token Push notification token
    */
-  registerToken(customerId: string, token: string): Promise<ApiResponse | ApiError>;
+  registerToken(customerId: string, token: string): Promise<ApiResponse>;
 }
 
 /**
@@ -90,10 +91,10 @@ export class FirebasePushNotificationService implements PushNotificationService 
         this.firebaseMessaging = getMessaging(this.firebaseApp);
         this.firebaseMessagingSw = getMessagingSw(this.firebaseApp);
       } else {
-        throw new Error('Firebase messaging is not supported in this environment');
+        throw new TowncryerAPIError('Firebase messaging is not supported in this environment', 400);
       }
     } catch (error) {
-      throw new Error(`Failed to initialize Firebase: ${error instanceof Error ? error.message : String(error)}`);
+      throw handleApiError(error);
     }
   }
 
@@ -103,7 +104,7 @@ export class FirebasePushNotificationService implements PushNotificationService 
   async requestPermission(): Promise<boolean> {
     try {
       if (!('Notification' in window)) {
-        throw new Error('This browser does not support desktop notifications');
+        throw new TowncryerAPIError('This browser does not support desktop notifications', 400);
       }
 
       const permission = await Notification.requestPermission();
@@ -115,7 +116,7 @@ export class FirebasePushNotificationService implements PushNotificationService 
 
       return permissionGranted;
     } catch (error) {
-      throw new Error(`Failed to request notification permission: ${error instanceof Error ? error.message : String(error)}`);
+      throw handleApiError(error);
     }
   }
 
@@ -125,7 +126,7 @@ export class FirebasePushNotificationService implements PushNotificationService 
      */
   private async getAndRegisterToken(): Promise<string | null> {
     if (!this.firebaseMessaging) {
-      throw new Error('Firebase messaging not initialized');
+      throw new TowncryerAPIError('Firebase messaging not initialized', 400);
     }
 
     const currentToken = await getToken(this.firebaseMessaging, {
@@ -147,7 +148,7 @@ export class FirebasePushNotificationService implements PushNotificationService 
      */
   receiveNotifications(onNotificationReceived: (notification: PushNotification) => void): void {
     if (!this.firebaseMessaging) {
-      throw new Error('Firebase messaging not initialized, notifications will not be received');
+      throw new TowncryerAPIError('Firebase messaging not initialized, notifications will not be received', 400);
     }
 
     try {
@@ -170,7 +171,7 @@ export class FirebasePushNotificationService implements PushNotificationService 
         }
       });
     } catch (error) {
-      throw new Error(`Failed to set up notification receiver: ${error instanceof Error ? error.message : String(error)}`);
+      throw handleApiError(error);
     }
   }
 
@@ -181,7 +182,7 @@ export class FirebasePushNotificationService implements PushNotificationService 
      */
   getMessageHistory(page = 0, size = 10): Promise<PaginatePage> {
     if (!this.customerId) {
-      throw new Error('Customer ID is required to get message history');
+      throw new TowncryerAPIError('Customer ID is required to get message history', 400);
     }
 
     return this.messagesApi.listMessagesByCustomerAndChannel(
@@ -189,7 +190,9 @@ export class FirebasePushNotificationService implements PushNotificationService 
       PUSH_NOTIFICATION_CHANNEL_NAME,
       page,
       size
-    ).then((response) => response.data);
+    )
+      .then((response) => response.data)
+      .catch((error) => { throw handleApiError(error); });
   }
 
   /**
@@ -198,7 +201,7 @@ export class FirebasePushNotificationService implements PushNotificationService 
   async getStats(): Promise<PushNotificationStats> {
     try {
       if (!this.customerId) {
-        throw new Error('Customer ID is required to get notification stats');
+        throw new TowncryerAPIError('Customer ID is required to get notification stats', 400);
       }
 
       const response = await this.messagesApi.getCustomerMessagesStats(this.customerId, PUSH_NOTIFICATION_CHANNEL_NAME);
@@ -218,7 +221,7 @@ export class FirebasePushNotificationService implements PushNotificationService 
       };
 
     } catch (error) {
-      throw new Error(`Failed to get notification statistics: ${error instanceof Error ? error.message : String(error)}`);
+      throw handleApiError(error);
     }
   }
 
@@ -230,11 +233,11 @@ export class FirebasePushNotificationService implements PushNotificationService 
   async markRead(notificationId: string): Promise<void> {
     try {
       if (!this.customerId) {
-        throw new Error('Customer ID is required to mark a notification as read');
+        throw new TowncryerAPIError('Customer ID is required to mark a notification as read', 400);
       }
 
       if (!notificationId) {
-        throw new Error('Notification ID is required');
+        throw new TowncryerAPIError('Notification ID is required', 400);
       }
 
       await this.messagesApi.markMessageAsRead(notificationId);
@@ -250,11 +253,11 @@ export class FirebasePushNotificationService implements PushNotificationService 
      */
   async registerToken(customerId: string, token: string): Promise<ApiResponse> {
     if (!customerId) {
-      throw new Error('Customer ID is required to register a push token');
+      throw new TowncryerAPIError('Customer ID is required to register a push token', 400);
     }
 
     if (!token) {
-      throw new Error('Push notification token is required');
+      throw new TowncryerAPIError('Push notification token is required', 400);
     }
 
     this.customerId = customerId;
@@ -274,24 +277,8 @@ export class FirebasePushNotificationService implements PushNotificationService 
         timestamp: new Date().toISOString()
       }
     };
-    try {
-      const response = await this.eventService.publishEvent(eventPayload);
-      if ('code' in response && 'message' in response) {
-        return response as ApiResponse;
-      }
-      return {
-        code: '200',
-        message: 'Success',
-        data: response
-      };
-    } catch (error) {
-      const apiError = handleApiError(error);
-      const errorResponse: ApiResponse = {
-        code: '500',
-        message: apiError.message || 'Failed to register token'
-      };
-      return errorResponse;
-    }
+
+    return this.eventService.publishEvent(eventPayload);
   }
 
   /**
