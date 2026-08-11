@@ -4,7 +4,7 @@ import { getMessaging, getToken, onMessage, isSupported, Messaging, MessagePaylo
 import { getMessaging as getMessagingSw } from 'firebase/messaging/sw';
 import { ApiResponse, ApiError, PublishEventPayload, MessagesApi, PaginatePage } from '@towncryerio/towncryer-js-api-client';
 import { EventService } from './eventService';
-import { apiService } from './api';
+import ApiService from './api';
 import { handleApiError } from '../utils/errorHandler';
 
 const PUSH_NOTIFICATION_CHANNEL_NAME = 'PushNotification';
@@ -70,6 +70,7 @@ export class FirebasePushNotificationService implements PushNotificationService 
   constructor(
     private firebaseConfig: FirebaseConfig,
     eventService: EventService,
+    apiService: ApiService,
     customerId?: string,
   ) {
     this.customerId = customerId;

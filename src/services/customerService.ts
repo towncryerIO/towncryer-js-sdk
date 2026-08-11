@@ -1,5 +1,5 @@
 import { ApiResponse, CreateCustomerRequest, CustomersApi } from '@towncryerio/towncryer-js-api-client';
-import { apiService } from './api';
+import ApiService from './api';
 
 /**
  * Customer Service Interface
@@ -18,7 +18,7 @@ export interface CustomerService {
 export class TowncryerCustomerService implements CustomerService {
   private customersApi: CustomersApi;
     
-  constructor() {
+  constructor(apiService: ApiService) {
     this.customersApi = apiService.getApi('customer');
   }
     

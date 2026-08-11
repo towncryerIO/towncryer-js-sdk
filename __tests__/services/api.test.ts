@@ -85,26 +85,30 @@ describe('ApiService', () => {
   beforeEach(() => {
     // Clear all mocks before each test
     jest.clearAllMocks();
-    
-    // Reset the singleton instance
-    (ApiService as any).instance = undefined;
-    
+
     // Create a new instance for each test
     mockInstance = new MockAxiosInstanceFactory();
     createSpy = jest.spyOn(mockInstance, 'create').mockImplementation((config?: any) => ({
       ...createMockAxiosInstance(),
       ...(config || {})
     }));
-    
-    apiService = ApiService.getInstance(mockInstance);
+
+    apiService = new ApiService(mockInstance);
   });
 
-  describe('getInstance', () => {
-    it('should return the same instance when called multiple times', () => {
-      const factory = new MockAxiosInstanceFactory();
-      const instance1 = ApiService.getInstance(factory);
-      const instance2 = ApiService.getInstance(factory);
-      expect(instance1).toBe(instance2);
+  describe('instance isolation', () => {
+    it('should not share auth/tenant state between separate instances', () => {
+      const otherApiService = new ApiService(new MockAxiosInstanceFactory());
+
+      apiService.setToken('token-a');
+      apiService.setOrganisationId('org-a');
+      otherApiService.setToken('token-b');
+      otherApiService.setOrganisationId('org-b');
+
+      expect((apiService as any).token).toBe('token-a');
+      expect((apiService as any).tenantId).toBe('org-a');
+      expect((otherApiService as any).token).toBe('token-b');
+      expect((otherApiService as any).tenantId).toBe('org-b');
     });
   });
 
