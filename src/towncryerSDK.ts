@@ -10,7 +10,7 @@ import { CustomerService, TowncryerCustomerService } from './services/customerSe
 import { MessageService, TowncryerMessageService } from './services/messageService';
 import { PushNotificationService, FirebasePushNotificationService } from './services/pushNotificationService';
 import { UtilityService, TowncryerUtilityService } from './services/utilityService';
-import { ApiResponse, ApiError, SendBulkMessagesPayload, PublishEventPayload, CreateCustomerRequest, ScheduleInfo } from '@towncryerio/towncryer-js-api-client';
+import { ApiResponse, SendBulkMessagesPayload, PublishEventPayload, CreateCustomerRequest, ScheduleInfo } from '@towncryerio/towncryer-js-api-client';
 import ApiService, { DefaultAxiosInstanceFactory } from './services/api';
 
 /**
@@ -18,18 +18,18 @@ import ApiService, { DefaultAxiosInstanceFactory } from './services/api';
  */
 export interface TowncryerSDK {
     // Customer methods
-    createCustomer(customer: CreateCustomerRequest): Promise<ApiResponse|ApiError>;
-    
+    createCustomer(customer: CreateCustomerRequest): Promise<ApiResponse>;
+
     // Event methods
-    publishEvent(event: PublishEventPayload): Promise<ApiResponse|ApiError>;
-    
+    publishEvent(event: PublishEventPayload): Promise<ApiResponse>;
+
     // Message methods
     sendMessages(messages: SendBulkMessagesPayload): Promise<ScheduleInfo>;
-    
+
     // Utility methods
-    submitContactForm(formData: ContactFormData): Promise<ApiResponse|ApiError>;
-    subscribeToEmails(email: string, options?: EmailSubscriptionOptions): Promise<ApiResponse|ApiError>;
-    
+    submitContactForm(formData: ContactFormData): Promise<ApiResponse>;
+    subscribeToEmails(email: string, options?: EmailSubscriptionOptions): Promise<ApiResponse>;
+
     // Token management
     setAccessToken(token: string): void;
     setRefreshToken(token: string): void;
@@ -38,7 +38,7 @@ export interface TowncryerSDK {
 
     // Push notification methods
     initialize(): void;
-    registerPushToken(customerId: string, token: string): Promise<ApiResponse|ApiError>;
+    registerPushToken(customerId: string, token: string): Promise<ApiResponse>;
     getPushNotificationService(): PushNotificationService;
 }
 
@@ -149,7 +149,7 @@ export class Towncryer implements TowncryerSDK {
      * Create a new customer
      * @param customer Customer data
      */
-  async createCustomer(customer: CreateCustomerRequest): Promise<ApiResponse|ApiError> {
+  async createCustomer(customer: CreateCustomerRequest): Promise<ApiResponse> {
     await this.ensureReady();
     return this.customerService.createCustomer(customer);
   }
@@ -169,7 +169,7 @@ export class Towncryer implements TowncryerSDK {
      * Publish an event to Towncryer
      * @param event Event data
      */
-  async publishEvent(event: PublishEventPayload): Promise<ApiResponse|ApiError> {
+  async publishEvent(event: PublishEventPayload): Promise<ApiResponse> {
     await this.ensureReady();
     return this.eventService.publishEvent(event);
   }
@@ -179,7 +179,7 @@ export class Towncryer implements TowncryerSDK {
      * @param customerId Customer ID
      * @param token Push notification token
      */
-  async registerPushToken(customerId: string, token: string): Promise<ApiResponse|ApiError> {
+  async registerPushToken(customerId: string, token: string): Promise<ApiResponse> {
     // Delegate to the push notification service
     if (!this.pushNotifications) {
       throw new Error('Push notifications not initialized');
@@ -201,7 +201,7 @@ export class Towncryer implements TowncryerSDK {
      * Submit contact form data
      * @param formData Contact form data including name, email, subject, and message
      */
-  async submitContactForm(formData: ContactFormData): Promise<ApiResponse|ApiError> {
+  async submitContactForm(formData: ContactFormData): Promise<ApiResponse> {
     await this.ensureReady();
     return this.utilityService.submitContactForm(formData);
   }
@@ -211,7 +211,7 @@ export class Towncryer implements TowncryerSDK {
      * @param email Email address to subscribe
      * @param options Additional subscription options like preferences and source
      */
-  async subscribeToEmails(email: string, options?: EmailSubscriptionOptions): Promise<ApiResponse|ApiError> {
+  async subscribeToEmails(email: string, options?: EmailSubscriptionOptions): Promise<ApiResponse> {
     await this.ensureReady();
     return this.utilityService.subscribeToEmails(email, options);
   }
