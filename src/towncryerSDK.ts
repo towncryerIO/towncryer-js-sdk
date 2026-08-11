@@ -13,6 +13,9 @@ import { UtilityService, TowncryerUtilityService } from './services/utilityServi
 import { ApiResponse, ApiError, SendBulkMessagesPayload, PublishEventPayload, CreateCustomerRequest, ScheduleInfo } from '@towncryerio/towncryer-js-api-client';
 import { apiService } from './services/api';
 
+const DEFAULT_BASE_URL = 'https://api.towncryer.io/api/v1';
+const DEFAULT_TIMEOUT = 30000;
+
 /**
  * Towncryer SDK Interface
  */
@@ -60,8 +63,10 @@ export class Towncryer implements TowncryerSDK {
      */
   constructor(config: Config) {
     this.config = config;
-    apiService.setBaseUrl('https://api.towncryer.io/api/v1');
-    
+    apiService.setBaseUrl(config.baseUrl ?? DEFAULT_BASE_URL);
+    apiService.setTimeout(config.timeout ?? DEFAULT_TIMEOUT);
+    apiService.setRetryConfig(config.retryConfig ?? {});
+
     if (config.authConfig.accessToken) {
       if (config.authConfig.apiKey) {
         console.warn('Both accessToken and apiKey provided. Using accessToken and ignoring apiKey.');

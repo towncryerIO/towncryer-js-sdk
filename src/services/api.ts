@@ -6,12 +6,20 @@ import {
   MessagesApi,
   ApiError,
 } from '@towncryerio/towncryer-js-api-client';
-import axios, { AxiosInstance, CreateAxiosDefaults } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, CreateAxiosDefaults } from 'axios';
+import { RetryConfig } from '../types';
 
 enum AuthMethod {
   API_KEY = 'api_key',
   TOKEN = 'token'
 }
+
+const DEFAULT_TIMEOUT = 30000;
+const DEFAULT_MAX_RETRIES = 3;
+const DEFAULT_RETRYABLE_STATUS_CODES = [429, 500, 502, 503, 504];
+const DEFAULT_RETRY_BASE_DELAY_MS = 300;
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 type ApiTypes = {
     auth: AuthApi;
@@ -49,6 +57,9 @@ export default class ApiService {
   private tenantId = '';
   private axiosInstanceFactory: AxiosInstanceFactory;
   private authMethod: AuthMethod = AuthMethod.TOKEN;
+  private timeout: number = DEFAULT_TIMEOUT;
+  private maxRetries: number = DEFAULT_MAX_RETRIES;
+  private retryableStatusCodes: number[] = DEFAULT_RETRYABLE_STATUS_CODES;
   private constructor(axiosFactory: AxiosInstanceFactory) {
     this.axiosInstanceFactory = axiosFactory;
     this.axiosInstance = this.createAxiosInstance();
@@ -83,6 +94,7 @@ export default class ApiService {
 
     return this.axiosInstanceFactory.create({
       baseURL: this.configuration.basePath,
+      timeout: this.timeout,
       headers,
     });
   }
@@ -93,6 +105,16 @@ export default class ApiService {
       basePath: baseUrl,
     });
     this.updateAxiosInstance();
+  }
+
+  public setTimeout(timeout: number) {
+    this.timeout = timeout;
+    this.updateAxiosInstance();
+  }
+
+  public setRetryConfig(retryConfig: RetryConfig) {
+    this.maxRetries = retryConfig.maxRetries ?? DEFAULT_MAX_RETRIES;
+    this.retryableStatusCodes = retryConfig.retryableStatusCodes ?? DEFAULT_RETRYABLE_STATUS_CODES;
   }
 
   public setToken(token: string | undefined) {
@@ -182,6 +204,33 @@ export default class ApiService {
     return response.data.accessToken || '';
   };
 
+  private isRetryableError(error: { response?: { status?: number }; request?: unknown }): boolean {
+    if (!error.response) {
+      return Boolean(error.request);
+    }
+    return this.retryableStatusCodes.includes(error.response.status as number);
+  }
+
+  private async retryIfRetryable(
+    originalRequest: AxiosRequestConfig & { _retryCount?: number },
+    error: { response?: { status?: number }; request?: unknown }
+  ) {
+    if (!originalRequest || !this.isRetryableError(error)) {
+      return Promise.reject(error);
+    }
+
+    originalRequest._retryCount = originalRequest._retryCount ?? 0;
+    if (originalRequest._retryCount >= this.maxRetries) {
+      return Promise.reject(error);
+    }
+
+    originalRequest._retryCount += 1;
+    const delay = DEFAULT_RETRY_BASE_DELAY_MS * 2 ** (originalRequest._retryCount - 1);
+    await sleep(delay);
+
+    return this.axiosInstance(originalRequest);
+  }
+
   private setupAxiosInterceptors() {
     this.axiosInstance.interceptors.request.use(
       request => {
@@ -207,7 +256,7 @@ export default class ApiService {
         }
 
         if (error.response?.status !== 401 || originalRequest._retry) {
-          return Promise.reject(error);
+          return this.retryIfRetryable(originalRequest, error);
         }
 
         originalRequest._retry = true;
