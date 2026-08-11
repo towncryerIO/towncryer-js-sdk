@@ -35,7 +35,7 @@ export interface TowncryerSDK {
     setRefreshToken(token: string): void;
 
     setCustomerId(customerId: string): void;
-    
+
     // Push notification methods
     initialize(): void;
     registerPushToken(customerId: string, token: string): Promise<ApiResponse|ApiError>;
@@ -54,6 +54,9 @@ export class Towncryer implements TowncryerSDK {
   private messageService: MessageService;
   private utilityService: UtilityService;
   private customerId: string;
+  // Tracks constructor-kicked-off async setup (e.g. api-key exchange); every
+  // public request method awaits this via ensureReady() before firing.
+  private readyPromise: Promise<void> = Promise.resolve();
 
   /**
      * Initialize the Towncryer SDK
@@ -74,7 +77,7 @@ export class Towncryer implements TowncryerSDK {
         config.organisationId
       );
     } else if (config.authConfig.apiKey) {
-      this.initializeWithApiKey(
+      this.readyPromise = this.initializeWithApiKey(
         config.authConfig.apiKey,
         config.organisationId
       );
@@ -111,14 +114,15 @@ export class Towncryer implements TowncryerSDK {
     }
   }
 
-  private initializeWithApiKey(apiKey: string, organisationId?: string) {
+  private initializeWithApiKey(apiKey: string, organisationId?: string): Promise<void> {
     if (organisationId) {
       this.apiService.setOrganisationId(organisationId);
     }
 
-    this.apiService.setApiKey(apiKey)
+    return this.apiService.setApiKey(apiKey)
       .catch((error: Error) => {
         console.error('Failed to initialize with API key:', error);
+        throw error;
       });
   }
 
@@ -132,10 +136,21 @@ export class Towncryer implements TowncryerSDK {
   }
 
   /**
+     * Waits for any async setup started by the constructor (e.g. exchanging
+     * an API key for an access token) to finish before a request goes out.
+     * Every public request method awaits this internally, so callers never
+     * need to think about it.
+     */
+  private ensureReady(): Promise<void> {
+    return this.readyPromise;
+  }
+
+  /**
      * Create a new customer
      * @param customer Customer data
      */
   async createCustomer(customer: CreateCustomerRequest): Promise<ApiResponse|ApiError> {
+    await this.ensureReady();
     return this.customerService.createCustomer(customer);
   }
 
@@ -155,6 +170,7 @@ export class Towncryer implements TowncryerSDK {
      * @param event Event data
      */
   async publishEvent(event: PublishEventPayload): Promise<ApiResponse|ApiError> {
+    await this.ensureReady();
     return this.eventService.publishEvent(event);
   }
 
@@ -168,6 +184,7 @@ export class Towncryer implements TowncryerSDK {
     if (!this.pushNotifications) {
       throw new Error('Push notifications not initialized');
     }
+    await this.ensureReady();
     return this.pushNotifications.registerToken(customerId, token);
   }
 
@@ -176,23 +193,26 @@ export class Towncryer implements TowncryerSDK {
      * @param messages Message options
      */
   async sendMessages(messages: SendBulkMessagesPayload): Promise<ScheduleInfo> {
+    await this.ensureReady();
     return this.messageService.sendMessages(messages);
   }
-    
+
   /**
      * Submit contact form data
      * @param formData Contact form data including name, email, subject, and message
      */
   async submitContactForm(formData: ContactFormData): Promise<ApiResponse|ApiError> {
+    await this.ensureReady();
     return this.utilityService.submitContactForm(formData);
   }
-    
+
   /**
      * Subscribe an email address to communications
      * @param email Email address to subscribe
      * @param options Additional subscription options like preferences and source
      */
   async subscribeToEmails(email: string, options?: EmailSubscriptionOptions): Promise<ApiResponse|ApiError> {
+    await this.ensureReady();
     return this.utilityService.subscribeToEmails(email, options);
   }
 
