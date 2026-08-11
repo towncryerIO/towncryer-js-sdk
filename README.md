@@ -42,9 +42,10 @@ import { Towncryer } from '@volvlabs/towncryer-sdk';
 
 // Initialize the SDK with your API credentials
 const towncryerClient = new Towncryer({
-  baseUrl: 'https://api.towncryer.io/api/v1',
-  apiKey: 'your-api-key',
-  secretKey: 'your-api-secret',
+  organisationId: 'your-organisation-id',
+  authConfig: {
+    apiKey: 'your-api-key',
+  },
   // Optional Firebase configuration for push notifications
   firebase: {
     apiKey: 'firebase-api-key',
