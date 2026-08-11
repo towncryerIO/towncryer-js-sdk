@@ -5,6 +5,8 @@ let acceptMock!: jest.Mock;
 
 class MockApiService {
   setBaseUrl = jest.fn();
+  setTimeout = jest.fn();
+  setRetryConfig = jest.fn();
   setOrganisationId = jest.fn();
   setToken = jest.fn();
   setTokenAndOrganisationId = jest.fn();

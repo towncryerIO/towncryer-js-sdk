@@ -4,11 +4,24 @@ export interface AuthConfig {
     refreshToken?: string;
 }
 
+export interface RetryConfig {
+    /** Maximum number of retry attempts for retryable errors. Defaults to 3. */
+    maxRetries?: number;
+    /** HTTP status codes that should trigger a retry. Defaults to [429, 500, 502, 503, 504]. */
+    retryableStatusCodes?: number[];
+}
+
 export interface Config {
     organisationId?: string;
     customerId?: string;
     authConfig: AuthConfig;
     firebase?: FirebaseConfig;
+    /** Base URL for the Towncryer API. Defaults to the production API URL. */
+    baseUrl?: string;
+    /** Request timeout in milliseconds. Defaults to 30000. */
+    timeout?: number;
+    /** Retry behavior for failed requests (5xx, 429, network errors). */
+    retryConfig?: RetryConfig;
 }
 
 export interface FirebaseConfig {

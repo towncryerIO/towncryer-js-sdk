@@ -144,6 +144,72 @@ describe('ApiService', () => {
     });
   });
 
+  describe('setTimeout', () => {
+    it('should update the axios timeout and recreate axios instance', () => {
+      apiService.setTimeout(5000);
+
+      expect(createSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ timeout: 5000 })
+      );
+    });
+  });
+
+  describe('setRetryConfig / isRetryableError', () => {
+    it('should default to the standard retryable status codes and max retries', () => {
+      expect((apiService as any).maxRetries).toBe(3);
+      expect((apiService as any).retryableStatusCodes).toEqual([429, 500, 502, 503, 504]);
+    });
+
+    it('should use provided maxRetries and retryableStatusCodes when set', () => {
+      apiService.setRetryConfig({ maxRetries: 5, retryableStatusCodes: [503] });
+
+      expect((apiService as any).maxRetries).toBe(5);
+      expect((apiService as any).retryableStatusCodes).toEqual([503]);
+    });
+
+    it('should treat configured status codes as retryable', () => {
+      apiService.setRetryConfig({ retryableStatusCodes: [503] });
+
+      expect((apiService as any).isRetryableError({ response: { status: 503 } })).toBe(true);
+      expect((apiService as any).isRetryableError({ response: { status: 404 } })).toBe(false);
+    });
+
+    it('should treat network errors (no response, but a request was made) as retryable', () => {
+      expect((apiService as any).isRetryableError({ request: {} })).toBe(true);
+      expect((apiService as any).isRetryableError({})).toBe(false);
+    });
+  });
+
+  describe('retryIfRetryable', () => {
+    it('should reject immediately when the error is not retryable', async () => {
+      const error = { response: { status: 404 } };
+      const originalRequest = {};
+
+      await expect((apiService as any).retryIfRetryable(originalRequest, error)).rejects.toBe(error);
+    });
+
+    it('should retry the request via the axios instance when retryable and under the max retry count', async () => {
+      const error = { response: { status: 503 } };
+      const originalRequest: any = {};
+      const retryResponse = { data: 'ok' };
+      const axiosInstanceMock = jest.fn().mockResolvedValue(retryResponse);
+      (apiService as any).axiosInstance = axiosInstanceMock;
+
+      const result = await (apiService as any).retryIfRetryable(originalRequest, error);
+
+      expect(originalRequest._retryCount).toBe(1);
+      expect(axiosInstanceMock).toHaveBeenCalledWith(originalRequest);
+      expect(result).toBe(retryResponse);
+    });
+
+    it('should reject once the max retry count has been reached', async () => {
+      const error = { response: { status: 503 } };
+      const originalRequest: any = { _retryCount: 3 };
+
+      await expect((apiService as any).retryIfRetryable(originalRequest, error)).rejects.toBe(error);
+    });
+  });
+
   describe('setOrganisationId', () => {
     it('should update the tenant ID and recreate axios instance', () => {
       const orgId = 'test-org';
