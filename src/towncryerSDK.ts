@@ -35,6 +35,9 @@ export interface TowncryerSDK {
     setRefreshToken(token: string): void;
 
     setCustomerId(customerId: string): void;
+
+    // Readiness
+    ready(): Promise<void>;
     
     // Push notification methods
     initialize(): void;
@@ -53,6 +56,7 @@ export class Towncryer implements TowncryerSDK {
   private messageService: MessageService;
   private utilityService: UtilityService;
   private customerId: string;
+  private readyPromise: Promise<void> = Promise.resolve();
 
   /**
      * Initialize the Towncryer SDK
@@ -61,7 +65,7 @@ export class Towncryer implements TowncryerSDK {
   constructor(config: Config) {
     this.config = config;
     apiService.setBaseUrl('https://api.towncryer.io/api/v1');
-    
+
     if (config.authConfig.accessToken) {
       if (config.authConfig.apiKey) {
         console.warn('Both accessToken and apiKey provided. Using accessToken and ignoring apiKey.');
@@ -72,7 +76,7 @@ export class Towncryer implements TowncryerSDK {
         config.organisationId
       );
     } else if (config.authConfig.apiKey) {
-      this.initializeWithApiKey(
+      this.readyPromise = this.initializeWithApiKey(
         config.authConfig.apiKey,
         config.organisationId
       );
@@ -109,14 +113,15 @@ export class Towncryer implements TowncryerSDK {
     }
   }
   
-  private initializeWithApiKey(apiKey: string, organisationId?: string) {
+  private initializeWithApiKey(apiKey: string, organisationId?: string): Promise<void> {
     if (organisationId) {
       apiService.setOrganisationId(organisationId);
     }
-    
-    apiService.setApiKey(apiKey)
+
+    return apiService.setApiKey(apiKey)
       .catch((error: Error) => {
         console.error('Failed to initialize with API key:', error);
+        throw error;
       });
   }
 
@@ -224,5 +229,16 @@ export class Towncryer implements TowncryerSDK {
     if (this.customerId !== '') {
       this.pushNotifications = this.constructFirebase(this.config.firebase ?? {} as FirebaseConfig);
     }
+  }
+
+  /**
+     * Resolves once any async setup started by the constructor (e.g. API key
+     * exchange) has completed. Await this before making requests when
+     * constructing the client with `authConfig.apiKey`; it resolves
+     * immediately for token-based or unauthenticated configs. Rejects if
+     * API key exchange failed.
+     */
+  ready(): Promise<void> {
+    return this.readyPromise;
   }
 }

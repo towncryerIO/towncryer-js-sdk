@@ -42,9 +42,10 @@ import { Towncryer } from '@volvlabs/towncryer-sdk';
 
 // Initialize the SDK with your API credentials
 const towncryerClient = new Towncryer({
-  baseUrl: 'https://api.towncryer.io/api/v1',
-  apiKey: 'your-api-key',
-  secretKey: 'your-api-secret',
+  organisationId: 'your-organisation-id',
+  authConfig: {
+    apiKey: 'your-api-key',
+  },
   // Optional Firebase configuration for push notifications
   firebase: {
     apiKey: 'firebase-api-key',
@@ -54,6 +55,11 @@ const towncryerClient = new Towncryer({
     appId: 'app-id'
   }
 });
+
+// When constructing with authConfig.apiKey, the SDK exchanges it for an
+// access token asynchronously in the background. Await `ready()` before
+// making requests to guarantee that exchange has completed.
+await towncryerClient.ready();
 
 // Initialize the SDK (sets up push notifications if Firebase config provided)
 await towncryerClient.initialize();
