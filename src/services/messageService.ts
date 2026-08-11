@@ -1,5 +1,6 @@
 import { MessagesApi, ScheduleInfo, SendBulkMessagesPayload } from '@towncryerio/towncryer-js-api-client';
-import { apiService } from './api';
+import ApiService from './api';
+import { handleApiError } from '../utils/errorHandler';
 
 /**
  * Message Service Interface
@@ -18,7 +19,7 @@ export interface MessageService {
 export class TowncryerMessageService implements MessageService {
   private messagesApi: MessagesApi;
     
-  constructor() {
+  constructor(apiService: ApiService) {
     this.messagesApi = apiService.getApi('message');
   }
     
@@ -26,14 +27,14 @@ export class TowncryerMessageService implements MessageService {
      * Send bulk messages
      * @param messages Bulk message options
      * @returns Response data from the message sending operation
-     * @throws Error if message sending fails
+     * @throws TowncryerAPIError if message sending fails
      */
   async sendMessages(messages: SendBulkMessagesPayload): Promise<ScheduleInfo> {
     try {
       const response = await this.messagesApi.sendMessage(messages);
       return response.data;
     } catch (error) {
-      throw new Error(`Failed to send messages: ${error instanceof Error ? error.message : String(error)}`);
+      throw handleApiError(error);
     }
   }
 }

@@ -39,7 +39,6 @@ export class DefaultAxiosInstanceFactory implements AxiosInstanceFactory {
 }
 
 export default class ApiService {
-  private static instance: ApiService;
   private apiInstances: Partial<ApiTypes> = {};
   private configuration: Configuration = {
     isJsonMime: (mime: string) => {
@@ -60,18 +59,10 @@ export default class ApiService {
   private timeout: number = DEFAULT_TIMEOUT;
   private maxRetries: number = DEFAULT_MAX_RETRIES;
   private retryableStatusCodes: number[] = DEFAULT_RETRYABLE_STATUS_CODES;
-  private constructor(axiosFactory: AxiosInstanceFactory) {
+  public constructor(axiosFactory: AxiosInstanceFactory) {
     this.axiosInstanceFactory = axiosFactory;
     this.axiosInstance = this.createAxiosInstance();
     this.setupAxiosInterceptors();
-  }
-
-  public static getInstance(factory: AxiosInstanceFactory): ApiService {
-    if (!ApiService.instance) {
-      ApiService.instance = new ApiService(factory);
-    }
-
-    return ApiService.instance;
   }
 
   private updateAxiosInstance() {
@@ -292,5 +283,3 @@ export default class ApiService {
     );
   }
 }
-
-export const apiService = ApiService.getInstance(new DefaultAxiosInstanceFactory());
