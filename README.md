@@ -56,11 +56,6 @@ const towncryerClient = new Towncryer({
   }
 });
 
-// When constructing with authConfig.apiKey, the SDK exchanges it for an
-// access token asynchronously in the background. Await `ready()` before
-// making requests to guarantee that exchange has completed.
-await towncryerClient.ready();
-
 // Initialize the SDK (sets up push notifications if Firebase config provided)
 await towncryerClient.initialize();
 ```
