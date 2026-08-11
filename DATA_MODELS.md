@@ -2,9 +2,17 @@
 
 This document provides a detailed reference of the data models used in the Towncryer TypeScript SDK.
 
+Types in this document come from two places:
+
+- **`src/types.ts`** — SDK-specific types, exported directly from the package root.
+- **`@towncryerio/towncryer-js-api-client`** — the generated API client package (a dependency
+  of this SDK, not re-exported by it). Request/response payloads for `createCustomer`,
+  `publishEvent`, and `sendMessages` come from here; import them directly from
+  `@towncryerio/towncryer-js-api-client` if you need to reference the types explicitly.
+
 ## Table of Contents
-- [Authentication](#authentication)
-- [Configuration](#configuration)
+- [Authentication & Configuration](#authentication--configuration)
+- [API Response](#api-response)
 - [Customer Data](#customer-data)
 - [Event Data](#event-data)
 - [Messaging](#messaging)
@@ -14,297 +22,252 @@ This document provides a detailed reference of the data models used in the Townc
 - [Contact Forms](#contact-forms)
 - [Email Subscriptions](#email-subscriptions)
 
-## Authentication
+## Authentication & Configuration
+
+`src/types.ts`
 
 ```typescript
 interface AuthConfig {
-    // API Key for service-to-service authentication
     apiKey?: string;
-    // Access token for authenticated requests
     accessToken?: string;
-    // Refresh token for obtaining new access tokens
     refreshToken?: string;
 }
-```
 
-## Configuration
+interface RetryConfig {
+    // Maximum number of retry attempts for retryable errors. Defaults to 3.
+    maxRetries?: number;
+    // HTTP status codes that should trigger a retry. Defaults to [429, 500, 502, 503, 504].
+    retryableStatusCodes?: number[];
+}
 
-```typescript
 interface Config {
-    // Organization ID for multi-tenant applications
     organisationId?: string;
-    // Current customer ID for user-specific operations
     customerId?: string;
-    // Authentication configuration
     authConfig: AuthConfig;
-    // Firebase configuration for push notifications
     firebase?: FirebaseConfig;
+    // Base URL for the Towncryer API. Defaults to https://api.towncryer.io/api/v1.
+    baseUrl?: string;
+    // Request timeout in milliseconds. Defaults to 30000.
+    timeout?: number;
+    // Retry behavior for failed requests (5xx, 429, network errors).
+    retryConfig?: RetryConfig;
 }
 
 interface FirebaseConfig {
-    // Firebase API key
     apiKey: string;
-    // Firebase auth domain
     authDomain: string;
-    // Firebase project ID
     projectId: string;
-    // Firebase messaging sender ID
     messagingSenderId: string;
-    // Firebase app ID
     appId: string;
-    // Firebase storage bucket
     storageBucket: string;
-    // Optional: Firebase measurement ID
-    measurementId?: string;
-    // Optional: VAPID key for web push
+    measurementId: string;
     vapidKey?: string;
 }
 ```
 
 ## API Response
 
+`src/types.ts`
+
 ```typescript
 interface ApiResponse {
-    // Response status code
-    code: string;
-    // Human-readable response message
+    code?: string;
     message: string;
-    // Response data (type varies by endpoint)
-    data?: any;
+    data?: object;
 }
 
 interface ScheduleResponse {
-    // Unique identifier for the scheduled operation
     id: string;
-    // Current status of the operation
     status: string;
+}
+```
+
+`ScheduleInfo`, returned by `sendMessages`, comes from
+`@towncryerio/towncryer-js-api-client` instead:
+
+```typescript
+interface ScheduleInfo {
+    jobId?: string;
+    status?: TypesJobStatus; // 'pending' | 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled'
 }
 ```
 
 ## Customer Data
 
+`CreateCustomerRequest`, from `@towncryerio/towncryer-js-api-client`, is the payload for
+`towncryerClient.createCustomer(...)`:
+
 ```typescript
 interface CreateCustomerRequest {
-    // Required customer information
-    customerId: string;        // Your internal customer ID
-    firstName: string;         // Customer's first name
-    lastName: string;          // Customer's last name
-    
-    // Optional contact information
-    email?: string;            // Customer's email address
-    phoneNumber?: string;      // Customer's phone number (E.164 format)
-    
-    // Additional metadata
-    metadata?: Record<string, any>; // Custom key-value pairs
+    externalId?: string;        // Your internal customer ID
+    firstName?: string;
+    lastName?: string;
+    identities: CustomerIdentityRequest[];
+    source: TypesChannelCustomerCreatedFrom; // 'WhatsApp' | 'Event' | 'CSVUpload' | 'TowncryerWebappForm' | 'TowncryerAPI'
+}
+
+interface CustomerIdentityRequest {
+    type: 'email' | 'phone' | 'push_token' | 'external_id';
+    value: string;
+    isPrimary?: boolean;
 }
 ```
 
 ## Event Data
 
+`PublishEventPayload`, from `@towncryerio/towncryer-js-api-client`, is the payload for
+`towncryerClient.publishEvent(...)`:
+
 ```typescript
-interface EventData {
-    // Required fields
-    name: string;              // Event name/type (e.g., 'user.login', 'purchase.completed')
-    customer: {
-        customerId: string;    // Your internal customer ID
-        firstName: string;     // Customer's first name
-        lastName: string;      // Customer's last name
-    };
-    
-    // Optional event-specific data
-    data?: Record<string, any>; // Additional event data as key-value pairs
+interface PublishEventPayload {
+    name: string;                    // Event name/type (e.g., 'product_viewed')
+    customer: EventCustomerRequest;
+    description?: string;
+    data?: object;                   // Additional event data as key-value pairs
+}
+
+interface EventCustomerRequest {
+    externalId: string;              // Your internal customer ID
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    phoneNumber?: string;
+    pushNotificationToken?: string;
 }
 ```
 
 ## Messaging
 
+`sendMessages(payload: SendBulkMessagesPayload): Promise<ScheduleInfo>` sends emails, push
+notifications, and SMS in a single call. All model types below come from
+`@towncryerio/towncryer-js-api-client`.
+
+```typescript
+interface SendBulkMessagesPayload {
+    emails?: SendEmailPayload[];
+    pushNotifications?: SendPushNotificationPayload[];
+    smses?: SendSMSPayload[];
+}
+```
+
 ### Email
 
 ```typescript
-interface EmailOptions {
-    // Required fields
-    title: string;            // Email subject line
-    body: string;             // Email body content (HTML supported)
-    recipients: string[];      // Array of recipient email addresses
-    
-    // Optional fields
-    templateId?: string;      // ID of email template to use
-    data?: Record<string, any>; // Template variables and additional data
+interface SendEmailPayload {
+    title?: string;
+    content?: string;
+    from?: EmailFrom;
+    templateId?: string;
+    recipients: EmailRecipient[];
+}
+
+interface EmailFrom {
+    name: string;
+    email: string;
+}
+
+interface EmailRecipient {
+    email: string;
+    name: string;
+    context?: object; // Template variables
 }
 ```
 
 ### Push Notifications
 
 ```typescript
-interface PushNotificationOptions {
-    // Required fields
-    title: string;            // Notification title
-    body: string;             // Notification message body
-    recipients: string[];      // Array of recipient user IDs or push tokens
-    
-    // Optional fields
-    data?: Record<string, any>; // Additional data payload
-    imageUrl?: string;         // URL of an image to display in the notification
+interface SendPushNotificationPayload {
+    title?: string;
+    content?: string;
+    templateId?: string;
+    data?: object;
+    recipients: SendPushNotificationRecipient[];
 }
 
+interface SendPushNotificationRecipient {
+    token: string; // Firebase FCM token
+    context?: object; // Template variables
+}
+```
+
+These are for sending. For receiving/tracking notifications on the client via
+`getPushNotificationService()`, the SDK's own types apply instead (`src/types.ts`):
+
+```typescript
 interface PushNotification {
-    id: string;               // Unique notification ID
-    title: string;            // Notification title
-    body: string;             // Notification message body
-    data?: Record<string, any>; // Additional data payload
-    imageUrl?: string;        // URL of an image to display
-    timestamp: number;        // Unix timestamp of when the notification was sent
-    read: boolean;            // Whether the notification has been read
+    id: string;
+    title: string;
+    body: string;
+    data?: object;
+    imageUrl?: string;
+    timestamp: number;
+    read: boolean;
 }
 
 interface PushNotificationStats {
-    total: number;            // Total number of notifications
-    unread: number;           // Number of unread notifications
-    lastUpdated: number;      // Unix timestamp of last update
+    total: number;
+    unread: number;
+    lastUpdated: number;
 }
 ```
 
 ### SMS
 
 ```typescript
-interface SMSOptions {
-    // Required fields
-    body: string;             // SMS message content
-    recipients: string[];      // Array of recipient phone numbers (E.164 format)
+interface SendSMSPayload {
+    content?: string;
+    from: string;          // Sender phone number or identity
+    templateId?: string;
+    to: SendSMSRecipient[];
+}
+
+interface SendSMSRecipient {
+    phoneNumber: string;
+    context?: object; // Template variables
 }
 ```
 
+`src/types.ts` also exports a standalone `SMSOptions` interface (`{ body, recipients }`), but
+it is not used by `sendMessages` — it predates the current bulk-message API and is kept only
+for backward compatibility with existing imports.
+
 ## Contact Forms
+
+`src/types.ts` — payload for `towncryerClient.submitContactForm(...)`:
 
 ```typescript
 interface ContactFormData {
-    // Required fields
-    name: string;             // Contact's full name
-    email: string;            // Contact's email address
-    subject: string;          // Subject of the contact form
-    message: string;          // Message content
-    
-    // Optional metadata
-    metadata?: Record<string, any>; // Additional custom fields
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+    metadata?: object;
 }
 ```
 
 ## Email Subscriptions
 
+`src/types.ts` — options for `towncryerClient.subscribeToEmails(email, options)`:
+
 ```typescript
 interface EmailSubscriptionOptions {
-    // Optional subscriber information
-    firstName?: string;       // Subscriber's first name
-    lastName?: string;        // Subscriber's last name
-    
-    // Subscription details
-    source?: string;          // Source of the subscription (e.g., 'newsletter_popup')
-    preferences?: string[];   // Subscription preferences (e.g., ['marketing', 'product_updates'])
-    
-    // Additional metadata
-    metadata?: Record<string, any>; // Custom key-value pairs
+    firstName?: string;
+    lastName?: string;
+    source?: string;
+    preferences?: string[];
+    metadata?: object;
 }
 ```
 
 ## Error Handling
 
-All API methods return either an `ApiResponse` or an `ApiError`:
+Every public SDK method rejects with a single `TowncryerAPIError` on failure, exported from
+`src/errors.ts`:
 
 ```typescript
-interface ApiError {
-    // Error code (e.g., 'UNAUTHORIZED', 'VALIDATION_ERROR')
-    code: string;
-    // Human-readable error message
-    message: string;
-    // Optional additional error details
-    details?: any;
+class TowncryerAPIError extends Error {
+    readonly status: number;
+    readonly code?: string | number;
+    readonly errors?: object;
 }
 ```
-```typescript
-export interface PushNotificationOptions {
-    // Fields
-    title: string;            // Notification title
-    content: string;          // Notification body
-    templateId?: string;      // Optional template ID
-    data?: Record<string, any>; // Additional data payload
-    
-    // Recipients
-    recipients: PushNotificationRecipient[];
-}
-
-export interface PushNotificationRecipient {
-    token: string;           // Firebase FCM token
-    context?: Record<string, any>; // Template variables
-}
-```
-
-### SMS
-
-**OpenAPI Schema: `SendSMSPayload`**
-
-```typescript
-export interface SMSOptions {
-    // Fields
-    content: string;         // SMS content
-    from?: string;           // Sender phone number or identity
-    templateId?: string;     // Optional template ID
-    
-    // Recipients
-    recipients: SMSRecipient[];
-}
-
-export interface SMSRecipient {
-    phoneNumber: string;
-    context?: Record<string, any>; // Template variables
-}
-```
-
-## Response Models
-
-### API Response
-
-**OpenAPI Schema: `ApiResponse`**
-
-```typescript
-export interface ApiResponse<T = any> {
-    code: string;
-    message: string;
-    data?: T;
-}
-```
-
-### Schedule Response
-
-**OpenAPI Schema: `ScheduleResponse`**
-
-```typescript
-export interface ScheduleResponse {
-    id: string;              // Job ID
-    status: JobStatus;       // Job status
-}
-
-export type JobStatus = 'pending' | 'queued' | 'processing' | 'completed';
-```
-
-## Additional Considerations
-
-### EventsAPI with Query Parameters
-
-Based on the provided memory, the backend now supports additional parameters for listing events:
-
-```typescript
-export interface EventListParams {
-    page?: number;           // Page number for pagination
-    size?: number;           // Page size for pagination
-    query?: string;          // Event name search (ILIKE)
-    dateFilter?: string;     // Date filter for events
-}
-```
-
-These parameters should be considered when implementing the events-related methods in the SDK, even though they may not be directly visible in the current OpenAPI specification.
-
-## Implementation Notes
-
-1. All customer-facing SDK methods should use these interfaces for type safety
-2. The SDK should convert between these models and the auto-generated API client models
-3. Helper methods should compose these models to provide an easy-to-use developer experience
