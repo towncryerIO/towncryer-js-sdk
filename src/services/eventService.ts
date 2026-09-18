@@ -1,5 +1,4 @@
-import { ApiResponse } from '../types';
-import { EventsApi, PublishEventPayload } from '@towncryerio/towncryer-js-api-client';
+import { ApiResponse, EventsApi, PublishEventPayload } from '@towncryerio/towncryer-js-api-client';
 import { handleApiError } from '../utils/errorHandler';
 import ApiService from './api';
 

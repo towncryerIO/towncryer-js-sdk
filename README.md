@@ -298,7 +298,8 @@ This SDK provides TypeScript type definitions for all objects and parameters, ex
 `src/types.ts` and re-exported from the package root:
 
 - `Config`, `AuthConfig`, `RetryConfig`, `FirebaseConfig`: SDK setup and authentication
-- `ApiResponse`, `ScheduleResponse`: Response shapes
+- `ApiResponse`: Response shape, re-exported from `@towncryerio/towncryer-js-api-client` so
+  there is a single definition of it in use
 - `ContactFormData`: Structure for contact form submissions
 - `EmailSubscriptionOptions`: Options for email subscriptions
 - `PushNotification`, `PushNotificationStats`: Push notification history and stats

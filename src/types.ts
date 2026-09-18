@@ -35,18 +35,15 @@ export interface FirebaseConfig {
     vapidKey?: string;
 }
 
-// API Response interfaces
-export interface ApiResponse {
-    code?: string;
-    message: string;
-    data?: object;
-}
+// `ApiResponse` is defined by the generated API client, not hand-maintained
+// here, so there is a single source of truth for the shape of a response.
+export type { ApiResponse } from '@towncryerio/towncryer-js-api-client';
 
-export interface ScheduleResponse {
-    id: string;
-    status: string;
-}
-
+/**
+ * @deprecated Predates the current bulk-message API and is not used by `sendMessages`
+ * (which takes `SendSMSPayload` from `@towncryerio/towncryer-js-api-client` instead). Kept
+ * only for backward compatibility with existing imports.
+ */
 export interface SMSOptions {
     body: string;
     recipients: string[];

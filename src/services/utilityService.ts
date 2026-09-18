@@ -1,6 +1,6 @@
-import { ApiResponse, ContactFormData, EmailSubscriptionOptions } from '../types';
+import { ContactFormData, EmailSubscriptionOptions } from '../types';
 import { EventService } from './eventService';
-import { EventCustomerRequest, PublishEventPayload } from '@towncryerio/towncryer-js-api-client';
+import { ApiResponse, EventCustomerRequest, PublishEventPayload } from '@towncryerio/towncryer-js-api-client';
 
 /**
  * Utility Service Interface
