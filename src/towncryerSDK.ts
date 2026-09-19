@@ -93,9 +93,8 @@ export class Towncryer implements TowncryerSDK {
     this.eventService = new TowncryerEventService(this.apiService);
     this.customerId = config.customerId ?? '';
 
-    if (config.firebase !== null || Object.keys(config.firebase).length > 0) {
-      this.pushNotifications = this.constructFirebase(
-        config.firebase ?? {} as FirebaseConfig);
+    if (config.firebase) {
+      this.pushNotifications = this.constructFirebase(config.firebase);
     }
 
     this.customerService = new TowncryerCustomerService(this.apiService);
@@ -249,8 +248,8 @@ export class Towncryer implements TowncryerSDK {
 
   setCustomerId(customerId: string): void {
     this.customerId = customerId;
-    if (this.customerId !== '') {
-      this.pushNotifications = this.constructFirebase(this.config.firebase ?? {} as FirebaseConfig);
+    if (this.customerId !== '' && this.config.firebase) {
+      this.pushNotifications = this.constructFirebase(this.config.firebase);
     }
   }
 }
