@@ -32,7 +32,7 @@ export class TowncryerCustomerService implements CustomerService {
   async createCustomer(customer: CreateCustomerRequest): Promise<ApiResponse> {
     try {
       const response = await this.customersApi.createCustomer(customer);
-      return response;
+      return response.data;
     } catch (error) {
       throw handleApiError(error);
     }

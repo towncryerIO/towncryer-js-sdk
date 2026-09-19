@@ -67,23 +67,20 @@ interface FirebaseConfig {
 
 ## API Response
 
-`src/types.ts`
+`ApiResponse` is re-exported from `src/types.ts`, but defined by
+`@towncryerio/towncryer-js-api-client` — there is a single definition of it in use, rather
+than a hand-maintained copy that can drift from the generated one:
 
 ```typescript
 interface ApiResponse {
     code?: string;
-    message: string;
+    message?: string;
     data?: object;
-}
-
-interface ScheduleResponse {
-    id: string;
-    status: string;
 }
 ```
 
-`ScheduleInfo`, returned by `sendMessages`, comes from
-`@towncryerio/towncryer-js-api-client` instead:
+`ScheduleInfo`, returned by `sendMessages`, also comes from
+`@towncryerio/towncryer-js-api-client`:
 
 ```typescript
 interface ScheduleInfo {
