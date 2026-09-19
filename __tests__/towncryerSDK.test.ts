@@ -53,8 +53,6 @@ const createCustomerMock = jest.fn();
 const sendMessagesMock = jest.fn();
 const submitContactFormMock = jest.fn();
 const subscribeToEmailsMock = jest.fn();
-const pushInitializeMock = jest.fn();
-const registerTokenMock = jest.fn();
 
 jest.mock('../src/services/customerService', () => ({
   __esModule: true,
@@ -78,26 +76,7 @@ jest.mock('../src/services/utilityService', () => ({
   })),
 }));
 
-jest.mock('../src/services/pushNotificationService', () => ({
-  __esModule: true,
-  FirebasePushNotificationService: jest.fn().mockImplementation(() => ({
-    initialize: pushInitializeMock,
-    registerToken: registerTokenMock,
-  })),
-}));
-
 import { Towncryer } from '../src/towncryerSDK';
-import { FirebasePushNotificationService } from '../src/services/pushNotificationService';
-
-const firebaseConfig = {
-  apiKey: 'firebase-api-key',
-  authDomain: 'example.firebaseapp.com',
-  projectId: 'example-project',
-  messagingSenderId: '123456789',
-  appId: '1:123456789:web:abcdef',
-  storageBucket: 'example.appspot.com',
-  measurementId: 'G-ABCDEF',
-};
 
 describe('Towncryer', () => {
   beforeEach(() => {
@@ -260,7 +239,6 @@ describe('Towncryer', () => {
     const client = () =>
       new Towncryer({
         authConfig: { accessToken: 'token-123' },
-        firebase: firebaseConfig,
       });
 
     it('delegates createCustomer to the customer service', async () => {
@@ -298,25 +276,6 @@ describe('Towncryer', () => {
       expect(subscribeToEmailsMock).toHaveBeenCalledWith('a@b.com', { source: 'blog' });
     });
 
-    it('delegates initialize to the push notification service', () => {
-      client().initialize();
-      expect(pushInitializeMock).toHaveBeenCalled();
-    });
-
-    it('delegates registerPushToken to the push notification service', async () => {
-      const response = { code: '200', message: 'Success' };
-      registerTokenMock.mockResolvedValue(response);
-
-      await expect(client().registerPushToken('cust-1', 'token-1')).resolves.toBe(response);
-      expect(registerTokenMock).toHaveBeenCalledWith('cust-1', 'token-1');
-    });
-
-    it('returns the push notification service instance', () => {
-      expect(client().getPushNotificationService()).toEqual(
-        expect.objectContaining({ initialize: pushInitializeMock })
-      );
-    });
-
     it('sets the access token directly on the api service', () => {
       const sdk = client();
       const apiService = apiServiceInstances[apiServiceInstances.length - 1];
@@ -341,71 +300,46 @@ describe('Towncryer', () => {
     });
   });
 
-  describe('push notification guard', () => {
-    it('does not construct push notifications when no firebase config is provided', () => {
-      new Towncryer({ authConfig: { accessToken: 'token-123' } });
-
-      expect(FirebasePushNotificationService).not.toHaveBeenCalled();
-    });
-
-    it('throws "Push notifications not initialized" from initialize() when no firebase config is provided', () => {
+  describe('service accessors', () => {
+    it('exposes the underlying event service', () => {
       const sdk = new Towncryer({ authConfig: { accessToken: 'token-123' } });
 
-      expect(() => sdk.initialize()).toThrow('Push notifications not initialized');
-    });
-
-    it('throws "Push notifications not initialized" from registerPushToken() when no firebase config is provided', async () => {
-      const sdk = new Towncryer({ authConfig: { accessToken: 'token-123' } });
-
-      await expect(sdk.registerPushToken('cust-1', 'token-1')).rejects.toThrow(
-        'Push notifications not initialized'
+      expect(sdk.getEventService()).toEqual(
+        expect.objectContaining({ publishEvent: expect.any(Function) })
       );
     });
 
-    it('throws "Push notifications not initialized" from getPushNotificationService() when no firebase config is provided', () => {
+    it('exposes the underlying messages api client', () => {
+      const sdk = new Towncryer({ authConfig: { accessToken: 'token-123' } });
+      const apiService = apiServiceInstances[apiServiceInstances.length - 1];
+
+      const messagesApi = sdk.getMessagesApi();
+
+      expect(apiService.getApi).toHaveBeenCalledWith('message');
+      expect(messagesApi).toBeDefined();
+    });
+
+    it('defaults the customer id to an empty string when none is configured', () => {
       const sdk = new Towncryer({ authConfig: { accessToken: 'token-123' } });
 
-      expect(() => sdk.getPushNotificationService()).toThrow('Push notifications not initialized');
+      expect(sdk.getCustomerId()).toBe('');
     });
 
-    it('constructs push notifications on construction when a firebase config is provided', () => {
-      new Towncryer({
-        authConfig: { accessToken: 'token-123' },
-        firebase: firebaseConfig,
-      });
-
-      expect(FirebasePushNotificationService).toHaveBeenCalledWith(
-        firebaseConfig,
-        expect.anything(),
-        expect.anything(),
-        ''
-      );
-    });
-
-    it('does not (re)construct push notifications from setCustomerId when no firebase config is provided', () => {
-      const sdk = new Towncryer({ authConfig: { accessToken: 'token-123' } });
-
-      sdk.setCustomerId('cust-1');
-
-      expect(FirebasePushNotificationService).not.toHaveBeenCalled();
-      expect(() => sdk.getPushNotificationService()).toThrow('Push notifications not initialized');
-    });
-
-    it('(re)constructs push notifications from setCustomerId with the current customer id when a firebase config is provided', () => {
+    it('returns the configured customer id', () => {
       const sdk = new Towncryer({
         authConfig: { accessToken: 'token-123' },
-        firebase: firebaseConfig,
+        customerId: 'cust-1',
       });
-      jest.mocked(FirebasePushNotificationService).mockClear();
 
-      sdk.setCustomerId('cust-1');
+      expect(sdk.getCustomerId()).toBe('cust-1');
+    });
 
-      expect(FirebasePushNotificationService).toHaveBeenCalledWith(
-        firebaseConfig,
-        expect.anything(),
-        expect.anything(),
-        'cust-1'
-      );
+    it('reflects an updated customer id after setCustomerId', () => {
+      const sdk = new Towncryer({ authConfig: { accessToken: 'token-123' } });
+
+      sdk.setCustomerId('cust-2');
+
+      expect(sdk.getCustomerId()).toBe('cust-2');
     });
   });
 });

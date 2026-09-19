@@ -44,24 +44,12 @@ interface Config {
     organisationId?: string;
     customerId?: string;
     authConfig: AuthConfig;
-    firebase?: FirebaseConfig;
     // Base URL for the Towncryer API. Defaults to https://api.towncryer.io/api/v1.
     baseUrl?: string;
     // Request timeout in milliseconds. Defaults to 30000.
     timeout?: number;
     // Retry behavior for failed requests (5xx, 429, network errors).
     retryConfig?: RetryConfig;
-}
-
-interface FirebaseConfig {
-    apiKey: string;
-    authDomain: string;
-    projectId: string;
-    messagingSenderId: string;
-    appId: string;
-    storageBucket: string;
-    measurementId: string;
-    vapidKey?: string;
 }
 ```
 
@@ -187,26 +175,10 @@ interface SendPushNotificationRecipient {
 }
 ```
 
-These are for sending. For receiving/tracking notifications on the client via
-`getPushNotificationService()`, the SDK's own types apply instead (`src/types.ts`):
-
-```typescript
-interface PushNotification {
-    id: string;
-    title: string;
-    body: string;
-    data?: object;
-    imageUrl?: string;
-    timestamp: number;
-    read: boolean;
-}
-
-interface PushNotificationStats {
-    total: number;
-    unread: number;
-    lastUpdated: number;
-}
-```
+These cover sending push notifications through `sendMessages`. Receiving/tracking notifications
+on the client (permission requests, Firebase Cloud Messaging setup, notification history) is not
+part of this SDK — see `@towncryerio/towncryer-react-sdk`, which has its own `PushNotification`
+and `PushNotificationStats` types for that.
 
 ### SMS
 

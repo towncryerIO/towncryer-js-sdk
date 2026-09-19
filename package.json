@@ -53,7 +53,6 @@
     "eslint": "^8.57.1",
     "globals": "^16.3.0",
     "jest": "^30.0.3",
-    "jest-environment-jsdom": "^30.0.2",
     "jiti": "^2.5.1",
     "rimraf": "^5.0.1",
     "ts-jest": "^29.4.1",
@@ -64,8 +63,7 @@
   },
   "dependencies": {
     "@towncryerio/towncryer-js-api-client": "^1.2.0-f79da7f",
-    "axios": "^1.4.0",
-    "firebase": "^11.9.1"
+    "axios": "^1.4.0"
   },
   "files": [
     "dist",

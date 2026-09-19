@@ -1,16 +1,14 @@
-import { 
-  Config, 
+import {
+  Config,
   ContactFormData,
-  EmailSubscriptionOptions,
-  FirebaseConfig
+  EmailSubscriptionOptions
 } from './types';
 
 import { EventService, TowncryerEventService } from './services/eventService';
 import { CustomerService, TowncryerCustomerService } from './services/customerService';
 import { MessageService, TowncryerMessageService } from './services/messageService';
-import { PushNotificationService, FirebasePushNotificationService } from './services/pushNotificationService';
 import { UtilityService, TowncryerUtilityService } from './services/utilityService';
-import { ApiResponse, SendBulkMessagesPayload, PublishEventPayload, CreateCustomerRequest, ScheduleInfo } from '@towncryerio/towncryer-js-api-client';
+import { ApiResponse, SendBulkMessagesPayload, PublishEventPayload, CreateCustomerRequest, ScheduleInfo, MessagesApi } from '@towncryerio/towncryer-js-api-client';
 import ApiService, { DefaultAxiosInstanceFactory } from './services/api';
 
 const DEFAULT_BASE_URL = 'https://api.towncryer.io/api/v1';
@@ -39,19 +37,19 @@ export interface TowncryerSDK {
 
     setCustomerId(customerId: string): void;
 
-    // Push notification methods
-    initialize(): void;
-    registerPushToken(customerId: string, token: string): Promise<ApiResponse>;
-    getPushNotificationService(): PushNotificationService;
+    // Accessors used by optional, environment-specific extensions (e.g. the
+    // browser push notification support in @towncryerio/towncryer-react-sdk)
+    // to build on top of the core SDK's services.
+    getEventService(): EventService;
+    getMessagesApi(): MessagesApi;
+    getCustomerId(): string;
 }
 
 /**
  * Towncryer SDK - Main class for interacting with the Towncryer API
  */
 export class Towncryer implements TowncryerSDK {
-  private config: Config;
   private apiService: ApiService;
-  private pushNotifications?: PushNotificationService;
   private eventService: EventService;
   private customerService: CustomerService;
   private messageService: MessageService;
@@ -66,7 +64,6 @@ export class Towncryer implements TowncryerSDK {
      * @param config Configuration options
      */
   constructor(config: Config) {
-    this.config = config;
     this.apiService = new ApiService(new DefaultAxiosInstanceFactory());
     this.apiService.setBaseUrl(config.baseUrl ?? DEFAULT_BASE_URL);
     this.apiService.setTimeout(config.timeout ?? DEFAULT_TIMEOUT);
@@ -92,10 +89,6 @@ export class Towncryer implements TowncryerSDK {
 
     this.eventService = new TowncryerEventService(this.apiService);
     this.customerId = config.customerId ?? '';
-
-    if (config.firebase) {
-      this.pushNotifications = this.constructFirebase(config.firebase);
-    }
 
     this.customerService = new TowncryerCustomerService(this.apiService);
     this.messageService = new TowncryerMessageService(this.apiService);
@@ -130,15 +123,6 @@ export class Towncryer implements TowncryerSDK {
       });
   }
 
-  constructFirebase(config: FirebaseConfig): FirebasePushNotificationService {
-    return new FirebasePushNotificationService(
-      config,
-      this.eventService,
-      this.apiService,
-      this.customerId,
-    );
-  }
-
   /**
      * Waits for any async setup started by the constructor (e.g. exchanging
      * an API key for an access token) to finish before a request goes out.
@@ -159,37 +143,12 @@ export class Towncryer implements TowncryerSDK {
   }
 
   /**
-     * Initialize the SDK (mainly for Firebase setup)
-     */
-  initialize(): void {
-    // Initialize Firebase for push notifications
-    if (!this.pushNotifications) {
-      throw new Error('Push notifications not initialized');
-    }
-    this.pushNotifications.initialize();
-  }
-
-  /**
      * Publish an event to Towncryer
      * @param event Event data
      */
   async publishEvent(event: PublishEventPayload): Promise<ApiResponse> {
     await this.ensureReady();
     return this.eventService.publishEvent(event);
-  }
-
-  /**
-     * Register a push notification token for a customer
-     * @param customerId Customer ID
-     * @param token Push notification token
-     */
-  async registerPushToken(customerId: string, token: string): Promise<ApiResponse> {
-    // Delegate to the push notification service
-    if (!this.pushNotifications) {
-      throw new Error('Push notifications not initialized');
-    }
-    await this.ensureReady();
-    return this.pushNotifications.registerToken(customerId, token);
   }
 
   /**
@@ -221,16 +180,6 @@ export class Towncryer implements TowncryerSDK {
   }
 
   /**
-     * Get access to the push notification service for more direct control
-     */
-  getPushNotificationService(): PushNotificationService {
-    if (!this.pushNotifications) {
-      throw new Error('Push notifications not initialized');
-    }
-    return this.pushNotifications;
-  }
-
-  /**
      * Set or update the access token after initialization
      * @param token The access token to use for API requests
      */
@@ -248,8 +197,28 @@ export class Towncryer implements TowncryerSDK {
 
   setCustomerId(customerId: string): void {
     this.customerId = customerId;
-    if (this.customerId !== '' && this.config.firebase) {
-      this.pushNotifications = this.constructFirebase(this.config.firebase);
-    }
+  }
+
+  /**
+     * Get the event service, for building environment-specific extensions
+     * (e.g. browser push notification support) on top of the core SDK.
+     */
+  getEventService(): EventService {
+    return this.eventService;
+  }
+
+  /**
+     * Get the underlying messages API client, for building environment-specific
+     * extensions (e.g. browser push notification support) on top of the core SDK.
+     */
+  getMessagesApi(): MessagesApi {
+    return this.apiService.getApi('message');
+  }
+
+  /**
+     * Get the currently configured customer ID.
+     */
+  getCustomerId(): string {
+    return this.customerId;
   }
 }
