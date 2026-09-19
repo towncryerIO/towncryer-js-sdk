@@ -1,12 +1,12 @@
-import { TowncryerEventService } from '../../src/services/eventService';
+import { EventService } from '../../src/services/eventService';
 import ApiService from '../../src/services/api';
 import { TowncryerAPIError } from '../../src/errors';
 import { PublishEventPayload } from '@towncryerio/towncryer-js-api-client';
 
-describe('TowncryerEventService', () => {
+describe('EventService', () => {
   const accept = jest.fn();
   let apiService: ApiService;
-  let service: TowncryerEventService;
+  let service: EventService;
 
   const payload: PublishEventPayload = {
     name: 'signup',
@@ -18,7 +18,7 @@ describe('TowncryerEventService', () => {
     apiService = {
       getApi: jest.fn().mockReturnValue({ accept }),
     } as unknown as ApiService;
-    service = new TowncryerEventService(apiService);
+    service = new EventService(apiService);
   });
 
   it('requests the event API from the api service', () => {

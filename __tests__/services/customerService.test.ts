@@ -1,19 +1,19 @@
-import { TowncryerCustomerService } from '../../src/services/customerService';
+import { CustomerService } from '../../src/services/customerService';
 import ApiService from '../../src/services/api';
 import { TowncryerAPIError } from '../../src/errors';
 import { CreateCustomerRequest } from '@towncryerio/towncryer-js-api-client';
 
-describe('TowncryerCustomerService', () => {
+describe('CustomerService', () => {
   const createCustomer = jest.fn();
   let apiService: ApiService;
-  let service: TowncryerCustomerService;
+  let service: CustomerService;
 
   beforeEach(() => {
     jest.clearAllMocks();
     apiService = {
       getApi: jest.fn().mockReturnValue({ createCustomer }),
     } as unknown as ApiService;
-    service = new TowncryerCustomerService(apiService);
+    service = new CustomerService(apiService);
   });
 
   it('requests the customer API from the api service', () => {

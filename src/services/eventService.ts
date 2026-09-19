@@ -3,21 +3,9 @@ import { handleApiError } from '../utils/errorHandler';
 import ApiService from './api';
 
 /**
- * Event Service Interface
+ * Event Service using the Towncryer API
  */
-export interface EventService {
-    /**
-     * Publish an event to Towncryer
-     * @param eventPayload Event payload data
-     */
-    publishEvent(eventPayload: PublishEventPayload): Promise<ApiResponse>;
-}
-
-
-/**
- * Event implementation using Towncryer API
- */
-export class TowncryerEventService implements EventService {
+export class EventService {
   private eventsApi: EventsApi;
 
   constructor(apiService: ApiService) {

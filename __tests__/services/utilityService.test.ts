@@ -1,15 +1,15 @@
-import { TowncryerUtilityService } from '../../src/services/utilityService';
+import { UtilityService } from '../../src/services/utilityService';
 import { EventService } from '../../src/services/eventService';
 import { ApiResponse } from '@towncryerio/towncryer-js-api-client';
 
-describe('TowncryerUtilityService', () => {
-  let eventService: jest.Mocked<EventService>;
-  let service: TowncryerUtilityService;
+describe('UtilityService', () => {
+  let eventService: { publishEvent: jest.Mock };
+  let service: UtilityService;
   const okResponse: ApiResponse = { code: '200', message: 'Success' };
 
   beforeEach(() => {
     eventService = { publishEvent: jest.fn().mockResolvedValue(okResponse) };
-    service = new TowncryerUtilityService(eventService);
+    service = new UtilityService(eventService as unknown as EventService);
   });
 
   describe('submitContactForm', () => {

@@ -4,10 +4,10 @@ import {
   EmailSubscriptionOptions
 } from './types';
 
-import { EventService, TowncryerEventService } from './services/eventService';
-import { CustomerService, TowncryerCustomerService } from './services/customerService';
-import { MessageService, TowncryerMessageService } from './services/messageService';
-import { UtilityService, TowncryerUtilityService } from './services/utilityService';
+import { EventService } from './services/eventService';
+import { CustomerService } from './services/customerService';
+import { MessageService } from './services/messageService';
+import { UtilityService } from './services/utilityService';
 import { ApiResponse, SendBulkMessagesPayload, PublishEventPayload, CreateCustomerRequest, ScheduleInfo, MessagesApi } from '@towncryerio/towncryer-js-api-client';
 import ApiService, { DefaultAxiosInstanceFactory } from './services/api';
 
@@ -15,9 +15,11 @@ const DEFAULT_BASE_URL = 'https://api.towncryer.io/api/v1';
 const DEFAULT_TIMEOUT = 30000;
 
 /**
- * Towncryer SDK Interface
+ * Towncryer SDK contract implemented by {@link Towncryer}. Consumers who want
+ * to substitute a fake/mock SDK in their own tests can depend on this
+ * interface instead of the concrete class.
  */
-export interface TowncryerSDK {
+export interface ITowncryer {
     // Customer methods
     createCustomer(customer: CreateCustomerRequest): Promise<ApiResponse>;
 
@@ -48,7 +50,7 @@ export interface TowncryerSDK {
 /**
  * Towncryer SDK - Main class for interacting with the Towncryer API
  */
-export class Towncryer implements TowncryerSDK {
+export class Towncryer implements ITowncryer {
   private apiService: ApiService;
   private eventService: EventService;
   private customerService: CustomerService;
@@ -87,12 +89,12 @@ export class Towncryer implements TowncryerSDK {
       this.apiService.setOrganisationId(config.organisationId);
     }
 
-    this.eventService = new TowncryerEventService(this.apiService);
+    this.eventService = new EventService(this.apiService);
     this.customerId = config.customerId ?? '';
 
-    this.customerService = new TowncryerCustomerService(this.apiService);
-    this.messageService = new TowncryerMessageService(this.apiService);
-    this.utilityService = new TowncryerUtilityService(this.eventService);
+    this.customerService = new CustomerService(this.apiService);
+    this.messageService = new MessageService(this.apiService);
+    this.utilityService = new UtilityService(this.eventService);
   }
 
   private initializeWithToken(

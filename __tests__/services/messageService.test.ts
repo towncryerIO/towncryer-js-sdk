@@ -1,12 +1,12 @@
-import { TowncryerMessageService } from '../../src/services/messageService';
+import { MessageService } from '../../src/services/messageService';
 import ApiService from '../../src/services/api';
 import { TowncryerAPIError } from '../../src/errors';
 import { SendBulkMessagesPayload } from '@towncryerio/towncryer-js-api-client';
 
-describe('TowncryerMessageService', () => {
+describe('MessageService', () => {
   const sendMessage = jest.fn();
   let apiService: ApiService;
-  let service: TowncryerMessageService;
+  let service: MessageService;
 
   const payload: SendBulkMessagesPayload = {
     emails: [{ recipients: [{ name: 'A B', email: 'a@b.com' }] }],
@@ -17,7 +17,7 @@ describe('TowncryerMessageService', () => {
     apiService = {
       getApi: jest.fn().mockReturnValue({ sendMessage }),
     } as unknown as ApiService;
-    service = new TowncryerMessageService(apiService);
+    service = new MessageService(apiService);
   });
 
   it('requests the message API from the api service', () => {
