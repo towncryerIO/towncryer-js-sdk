@@ -30,6 +30,9 @@ export * from './services/utilityService';
 // Export the main SDK
 export * from './towncryerSDK';
 
+// Export testing utilities for consumers stubbing this SDK in their own tests
+export * from './testing';
+
 // Re-export default
 import { Towncryer } from './towncryerSDK';
 export default Towncryer;

@@ -239,6 +239,34 @@ await towncryerClient.subscribeToEmails('subscriber@example.com', {
 });
 ```
 
+## Testing
+
+If your application uses this SDK and you want to unit-test your own code without making real
+API calls, use the `createMockTowncryerClient` factory instead of hand-writing
+`jest.mock('@towncryerio/towncryer-js-sdk', ...)` against the SDK's internal shape (including the
+generated API client types it wraps):
+
+```typescript
+import { createMockTowncryerClient } from '@towncryerio/towncryer-js-sdk';
+
+const towncryerClient = createMockTowncryerClient({
+  publishEvent: jest.fn().mockResolvedValue({ code: '200', message: 'OK' })
+});
+
+await myFeatureThatTakesAClient(towncryerClient);
+
+expect(towncryerClient.publishEvent).toHaveBeenCalledWith(
+  expect.objectContaining({ name: 'user.signed_up' })
+);
+```
+
+`createMockTowncryerClient` returns an object matching the `ITowncryer` interface (the same
+interface `Towncryer` implements), so it can be passed anywhere your code expects a real client —
+typically behind a constructor parameter or dependency-injection seam rather than the concrete
+`Towncryer` class. Every method has a working default that resolves with a benign value, so you
+only need to override the methods your test actually exercises. Overrides can be plain functions
+or `jest.fn()`-wrapped functions if you want to make call assertions.
+
 ## Type Definitions
 
 This SDK provides TypeScript type definitions for all objects and parameters, exported from
