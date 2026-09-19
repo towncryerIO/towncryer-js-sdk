@@ -15,24 +15,12 @@ export interface Config {
     organisationId?: string;
     customerId?: string;
     authConfig: AuthConfig;
-    firebase?: FirebaseConfig;
     /** Base URL for the Towncryer API. Defaults to the production API URL. */
     baseUrl?: string;
     /** Request timeout in milliseconds. Defaults to 30000. */
     timeout?: number;
     /** Retry behavior for failed requests (5xx, 429, network errors). */
     retryConfig?: RetryConfig;
-}
-
-export interface FirebaseConfig {
-    apiKey: string;
-    authDomain: string;
-    projectId: string;
-    messagingSenderId: string;
-    appId: string;
-    storageBucket: string;
-    measurementId: string;
-    vapidKey?: string;
 }
 
 // `ApiResponse` is defined by the generated API client, not hand-maintained
@@ -65,21 +53,4 @@ export interface EmailSubscriptionOptions {
     source?: string;
     preferences?: string[];
     metadata?: object;
-}
-
-// Push Notification Models
-export interface PushNotification {
-    id: string;
-    title: string;
-    body: string;
-    data?: object;
-    imageUrl?: string;
-    timestamp: number;
-    read: boolean;
-}
-
-export interface PushNotificationStats {
-    total: number;
-    unread: number;
-    lastUpdated: number;
 }

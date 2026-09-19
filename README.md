@@ -1,6 +1,13 @@
 # Towncryer TypeScript SDK
 
-A TypeScript SDK for integrating with the Towncryer API to manage customer communications in web applications. This SDK provides a developer-friendly interface for event publishing, customer management, message delivery, and push notification handling.
+A TypeScript SDK for integrating with the Towncryer API to manage customer communications. This
+SDK provides a developer-friendly interface for event publishing, customer management, and
+message delivery. It has no browser-global dependencies, so it can be used anywhere JS runs —
+Node, React Native, server-side, or the browser.
+
+Looking for browser push notifications (Firebase Cloud Messaging)? That support lives in
+[`@towncryerio/towncryer-react-sdk`](https://github.com/towncryerIO/towncryer-react-sdk), which
+builds on top of this SDK.
 
 ## Features
 
@@ -17,12 +24,6 @@ A TypeScript SDK for integrating with the Towncryer API to manage customer commu
   - Deliver SMS messages to registered phone numbers
   - Send push notifications to registered devices
   - Schedule messages for future delivery
-
-- **Push Notification Handling**
-  - Firebase Cloud Messaging (FCM) integration
-  - Permission request and token management
-  - Notification display and user interaction
-  - Message history and read/unread status
 
 - **Helper Utilities**
   - Contact form submission handling
@@ -52,27 +53,14 @@ const towncryerClient = new Towncryer({
   retryConfig: {
     maxRetries: 3,
     retryableStatusCodes: [429, 500, 502, 503, 504]
-  },
-  // Optional Firebase configuration for push notifications
-  firebase: {
-    apiKey: 'firebase-api-key',
-    authDomain: 'your-app.firebaseapp.com',
-    projectId: 'your-project-id',
-    messagingSenderId: 'sender-id',
-    appId: 'app-id',
-    storageBucket: 'your-app.appspot.com',
-    measurementId: 'measurement-id'
   }
 });
-
-// If a Firebase config was provided, initialize push notification support
-towncryerClient.initialize();
 ```
 
 Every request method (`createCustomer`, `publishEvent`, `sendMessages`, `submitContactForm`,
-`subscribeToEmails`, `registerPushToken`) internally awaits any async setup started by the
-constructor (such as exchanging an API key for an access token) before firing, so you don't
-need to await anything between construction and your first call.
+`subscribeToEmails`) internally awaits any async setup started by the constructor (such as
+exchanging an API key for an access token) before firing, so you don't need to await anything
+between construction and your first call.
 
 ## Customer Management
 
@@ -194,15 +182,6 @@ const response = await towncryerClient.subscribeToEmails('subscriber@example.com
 });
 ```
 
-### Register Firebase Push Token
-
-```typescript
-const response = await towncryerClient.registerPushToken(
-  'customer-123',
-  'firebase-fcm-token-xyz'
-);
-```
-
 ## Error Handling
 
 ```typescript
@@ -217,46 +196,14 @@ try {
 }
 ```
 
-## Firebase Push Notification Integration
+## Browser Push Notifications
 
-`getPushNotificationService()` exposes the push notification service directly for advanced
-usage beyond `registerPushToken`. It throws if the SDK was constructed without a `firebase`
-config.
-
-### Setting Up Push Notifications
-
-```typescript
-// Request permission from the user
-const permission = await towncryerClient.getPushNotificationService().requestPermission();
-if (permission) {
-  console.log('Notification permission granted');
-} else {
-  console.log('Notification permission denied');
-}
-
-// Listen for incoming notifications (when app is in foreground)
-towncryerClient.getPushNotificationService().receiveNotifications((notification) => {
-  console.log('Received notification:', notification);
-  // Handle the notification in your UI
-});
-
-// Register a device token with a specific customer
-await towncryerClient.registerPushToken('customer-123', 'device-token-from-fcm');
-```
-
-### Managing Notifications
-
-```typescript
-// Get notification history
-const notifications = await towncryerClient.getPushNotificationService().getMessageHistory();
-
-// Get notification statistics
-const stats = await towncryerClient.getPushNotificationService().getStats();
-console.log(`You have ${stats.unread} unread notifications`);
-
-// Mark a notification as read
-await towncryerClient.getPushNotificationService().markRead('notification-id');
-```
+This SDK is environment-agnostic and has no browser-global dependencies, so Firebase Cloud
+Messaging (FCM) integration — permission requests, token registration, receiving notifications,
+and notification history — lives in
+[`@towncryerio/towncryer-react-sdk`](https://github.com/towncryerIO/towncryer-react-sdk)
+instead. That package builds on top of this SDK's `getEventService()`, `getMessagesApi()`, and
+`getCustomerId()` accessors; see its README for setup.
 
 ## Advanced Examples
 
@@ -297,12 +244,11 @@ await towncryerClient.subscribeToEmails('subscriber@example.com', {
 This SDK provides TypeScript type definitions for all objects and parameters, exported from
 `src/types.ts` and re-exported from the package root:
 
-- `Config`, `AuthConfig`, `RetryConfig`, `FirebaseConfig`: SDK setup and authentication
+- `Config`, `AuthConfig`, `RetryConfig`: SDK setup and authentication
 - `ApiResponse`: Response shape, re-exported from `@towncryerio/towncryer-js-api-client` so
   there is a single definition of it in use
 - `ContactFormData`: Structure for contact form submissions
 - `EmailSubscriptionOptions`: Options for email subscriptions
-- `PushNotification`, `PushNotificationStats`: Push notification history and stats
 - `SMSOptions`: Legacy SMS options shape (not used by `sendMessages`, which takes
   `SendSMSPayload` from `@towncryerio/towncryer-js-api-client` instead)
 

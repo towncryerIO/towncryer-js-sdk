@@ -147,8 +147,9 @@ const config: Config = {
   // A list of paths to snapshot serializer modules Jest should use for snapshot testing
   // snapshotSerializers: [],
 
-  // The test environment that will be used for testing
-  testEnvironment: "jsdom",
+  // The test environment that will be used for testing. The core SDK has no
+  // browser-global dependencies (see issue #13), so plain node is sufficient.
+  testEnvironment: "node",
 
   // Options that will be passed to the testEnvironment
   // testEnvironmentOptions: {},
