@@ -20,9 +20,9 @@ describe('TowncryerCustomerService', () => {
     expect(apiService.getApi).toHaveBeenCalledWith('customer');
   });
 
-  it('resolves with whatever the generated client returns on success', async () => {
-    const apiResponse = { data: { code: '200', message: 'Success', data: { id: 'cust-1' } } };
-    createCustomer.mockResolvedValue(apiResponse);
+  it('resolves with the response body from the generated client on success', async () => {
+    const apiResponseBody = { code: '200', message: 'Success', data: { id: 'cust-1' } };
+    createCustomer.mockResolvedValue({ data: apiResponseBody });
 
     const payload: CreateCustomerRequest = {
       identities: [{ type: 'email', value: 'a@b.com' }],
@@ -31,7 +31,7 @@ describe('TowncryerCustomerService', () => {
     const result = await service.createCustomer(payload);
 
     expect(createCustomer).toHaveBeenCalledWith(payload);
-    expect(result).toBe(apiResponse);
+    expect(result).toBe(apiResponseBody);
   });
 
   it('wraps a rejected request into a TowncryerAPIError', async () => {
