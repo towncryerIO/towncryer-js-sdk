@@ -3,20 +3,9 @@ import ApiService from './api';
 import { handleApiError } from '../utils/errorHandler';
 
 /**
- * Customer Service Interface
+ * Customer Service
  */
-export interface CustomerService {
-    /**
-     * Create a new customer or update existing one
-     * @param customer Customer data
-     */
-    createCustomer(customer: CreateCustomerRequest): Promise<ApiResponse>;
-}
-
-/**
- * Customer Service Implementation
- */
-export class TowncryerCustomerService implements CustomerService {
+export class CustomerService {
   private customersApi: CustomersApi;
     
   constructor(apiService: ApiService) {

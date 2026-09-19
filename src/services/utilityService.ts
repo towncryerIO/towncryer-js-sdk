@@ -3,75 +3,13 @@ import { EventService } from './eventService';
 import { ApiResponse, EventCustomerRequest, PublishEventPayload } from '@towncryerio/towncryer-js-api-client';
 
 /**
- * Utility Service Interface
+ * Utility Service
  *
- * This interface defines utility operations for common tasks in the Towncryer SDK,
- * such as handling contact form submissions and email subscriptions.
- * The utility service leverages the EventService to publish events to the Towncryer platform.
+ * Provides utility operations for common tasks in the Towncryer SDK, such as
+ * handling contact form submissions and email subscriptions, by publishing
+ * events to the Towncryer platform through the EventService.
  */
-export interface UtilityService {
-    /**
-     * Submit a contact form to Towncryer
-     *
-     * This method sends the contact form data as an event to the Towncryer platform,
-     * which can then trigger workflows, notifications, or other actions based on the submission.
-     *
-     * @param formData - Object containing contact form data
-     * @param formData.name - Full name of the contact
-     * @param formData.email - Email address of the contact
-     * @param formData.subject - Subject line of the contact form
-     * @param formData.message - Message body content
-     * @param formData.metadata - Optional additional metadata for the contact submission
-     * @returns Promise resolving to an ApiResponse with result details
-     * @example
-     * ```typescript
-     * const result = await utilityService.submitContactForm({
-     *   name: 'John Doe',
-     *   email: 'john@example.com',
-     *   subject: 'Product Inquiry',
-     *   message: 'I would like more information about your services.'
-     * });
-     * ```
-     */
-    submitContactForm(formData: ContactFormData): Promise<ApiResponse>;
-
-    /**
-     * Subscribe an email address to communications
-     *
-     * This method registers an email address for subscription to newsletters or other
-     * communications. It sends the subscription as an event to the Towncryer platform,
-     * which can then add the subscriber to appropriate lists and send confirmation emails.
-     *
-     * @param email - Email address to subscribe
-     * @param options - Optional subscription configuration
-     * @param options.firstName - Subscriber's first name
-     * @param options.lastName - Subscriber's last name
-     * @param options.source - Source of the subscription (e.g., 'website', 'landing-page')
-     * @param options.preferences - Array of subscription preferences/topics
-     * @param options.metadata - Any additional custom data for the subscription
-     * @returns Promise resolving to an ApiResponse with result details
-     * @example
-     * ```typescript
-     * const result = await utilityService.subscribeToEmails('user@example.com', {
-     *   firstName: 'Jane',
-     *   lastName: 'Smith',
-     *   source: 'newsletter-popup',
-     *   preferences: ['product-updates', 'marketing']
-     * });
-     * ```
-     */
-    subscribeToEmails(email: string, options?: EmailSubscriptionOptions): Promise<ApiResponse>;
-}
-
-/**
- * Towncryer Utility Service Implementation
- *
- * This class implements the UtilityService interface using the Towncryer event system.
- * It provides functionality for common user interactions like contact form submissions
- * and email subscriptions by publishing events to the Towncryer platform through
- * the EventService.
- */
-export class TowncryerUtilityService implements UtilityService {
+export class UtilityService {
   constructor(
         private eventService: EventService,
   ) {}

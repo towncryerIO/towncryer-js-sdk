@@ -3,20 +3,9 @@ import ApiService from './api';
 import { handleApiError } from '../utils/errorHandler';
 
 /**
- * Message Service Interface
+ * Message Service
  */
-export interface MessageService {
-    /**
-     * Send bulk messages (email, push, SMS)
-     * @param messages Bulk message options
-     */
-    sendMessages(messages: SendBulkMessagesPayload): Promise<ScheduleInfo>;
-}
-
-/**
- * Message Service Implementation
- */
-export class TowncryerMessageService implements MessageService {
+export class MessageService {
   private messagesApi: MessagesApi;
     
   constructor(apiService: ApiService) {

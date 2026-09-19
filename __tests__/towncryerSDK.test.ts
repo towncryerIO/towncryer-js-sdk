@@ -56,21 +56,21 @@ const subscribeToEmailsMock = jest.fn();
 
 jest.mock('../src/services/customerService', () => ({
   __esModule: true,
-  TowncryerCustomerService: jest.fn().mockImplementation(() => ({
+  CustomerService: jest.fn().mockImplementation(() => ({
     createCustomer: createCustomerMock,
   })),
 }));
 
 jest.mock('../src/services/messageService', () => ({
   __esModule: true,
-  TowncryerMessageService: jest.fn().mockImplementation(() => ({
+  MessageService: jest.fn().mockImplementation(() => ({
     sendMessages: sendMessagesMock,
   })),
 }));
 
 jest.mock('../src/services/utilityService', () => ({
   __esModule: true,
-  TowncryerUtilityService: jest.fn().mockImplementation(() => ({
+  UtilityService: jest.fn().mockImplementation(() => ({
     submitContactForm: submitContactFormMock,
     subscribeToEmails: subscribeToEmailsMock,
   })),
